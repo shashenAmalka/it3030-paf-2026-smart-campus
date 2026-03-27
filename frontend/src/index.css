@@ -54,9 +54,20 @@ p  { line-height: 1.6; color: var(--text-muted); }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at 30% 20%, rgba(0,173,181,0.12) 0%, transparent 60%),
-              radial-gradient(ellipse at 80% 80%, rgba(0,173,181,0.07) 0%, transparent 50%),
-              var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-center::before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  right: -20px;
+  bottom: -20px;
+  background: url('/SLIIT%20F.jpg') center/cover no-repeat;
+  filter: blur(12px) brightness(0.4) saturate(1.2);
+  z-index: -1;
 }
 
 /* ── Buttons ──────────────────────────────────────────────── */

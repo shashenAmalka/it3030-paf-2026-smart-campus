@@ -86,11 +86,10 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      const user = await register(name.trim(), itNumber.trim(), faculty, email.trim(), password);
+      await register(name.trim(), itNumber.trim(), faculty, email.trim(), password);
       setSuccess(true);
       setTimeout(() => {
-        const routes = { ADMIN: '/admin/dashboard', TECHNICIAN: '/technician/dashboard', USER: '/dashboard' };
-        navigate(routes[user.role] ?? '/dashboard', { replace: true });
+        navigate('/login', { replace: true });
       }, 1200);
     } catch (err) {
       setApiError(err.response?.data?.error || 'Registration failed. Please try again.');
@@ -147,7 +146,7 @@ export default function Register() {
         {success && (
           <div className="auth-toast auth-toast--success animate-in">
             <span className="auth-toast-icon">✅</span>
-            Account created! Redirecting…
+            Account created! Redirecting to login…
           </div>
         )}
 

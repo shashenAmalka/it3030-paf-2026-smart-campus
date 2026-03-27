@@ -52,8 +52,6 @@ export function AuthProvider({ children }) {
 
   const register = async (name, itNumber, faculty, email, password) => {
     const { data } = await api.post('/api/auth/register', { name, itNumber, faculty, email, password });
-    setUser(data);
-    localStorage.setItem('smartcampus_user', JSON.stringify(data));
     return data;
   };
 
