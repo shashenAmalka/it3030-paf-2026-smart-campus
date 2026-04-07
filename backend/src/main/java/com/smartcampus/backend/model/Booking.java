@@ -16,6 +16,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @Builder
 @Document(collection = "bookings")
+
 public class Booking {
 
     @Id
