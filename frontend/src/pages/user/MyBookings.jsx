@@ -5,6 +5,7 @@ import StatusBadge from '../../components/StatusBadge';
 import QRCheckin from '../../components/QRCheckin';
 import GlassModal from '../../components/GlassModal';
 import BookingForm from '../../components/BookingForm';
+import ResourcePicker from '../../components/BookingResourcePicker';
 
 const STATUS_FILTERS = ['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'];
 
@@ -18,18 +19,21 @@ const TYPE_ICONS = {
   EQUIPMENT:    '🔧',
 };
 
+// step: 'list' | 'pick' | 'form' | 'edit'
+
 export default function MyBookings() {
   const { user } = useAuth();
 
-  const [bookings,       setBookings]       = useState([]);
-  const [resources,      setResources]      = useState([]);
-  const [loading,        setLoading]        = useState(true);
-  const [error,          setError]          = useState('');
-  const [filter,         setFilter]         = useState('ALL');
-  const [search,         setSearch]         = useState('');
-  const [qrModal,        setQrModal]        = useState(null);
-  const [editingBooking, setEditingBooking] = useState(null);
-  const [showForm,       setShowForm]       = useState(false);
+  const [bookings,         setBookings]         = useState([]);
+  const [resources,        setResources]        = useState([]);
+  const [loading,          setLoading]          = useState(true);
+  const [error,            setError]            = useState('');
+  const [filter,           setFilter]           = useState('ALL');
+  const [search,           setSearch]           = useState('');
+  const [qrModal,          setQrModal]          = useState(null);
+  const [editingBooking,   setEditingBooking]   = useState(null);
+  const [step,             setStep]             = useState('list');
+  const [selectedResource, setSelectedResource] = useState(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -59,7 +63,8 @@ export default function MyBookings() {
       return next.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     });
     if (actionType === 'updated') setEditingBooking(null);
-    setShowForm(false);
+    setStep('list');
+    setSelectedResource(null);
   };
 
   const handleCancel = async (id) => {
@@ -74,7 +79,7 @@ export default function MyBookings() {
 
   const handleEdit = (booking) => {
     setEditingBooking(booking);
-    setShowForm(true);
+    setStep('edit');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -103,14 +108,65 @@ export default function MyBookings() {
           <h1>My Bookings</h1>
           <p>Manage your facility and resource booking requests.</p>
         </div>
-        <button
-          className="btn-primary"
-          style={{ width: 'auto' }}
-          onClick={() => { setEditingBooking(null); setShowForm(s => !s); }}
-        >
-          {showForm ? '✕ Close' : '+ New Booking'}
-        </button>
+
+        {step === 'list' && (
+          <button
+            className="btn-primary"
+            style={{ width: 'auto' }}
+            onClick={() => {
+              setSelectedResource(null);
+              setEditingBooking(null);
+              setStep('pick');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            + New Booking
+          </button>
+        )}
+
+        {(step === 'pick' || step === 'form' || step === 'edit') && (
+          <button
+            className="btn-sm"
+            onClick={() => { setStep('list'); setSelectedResource(null); setEditingBooking(null); }}
+          >
+            ✕ Cancel
+          </button>
+        )}
       </div>
+
+      {/* ── Breadcrumb ────────────────────────────────────────── */}
+      {step !== 'list' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16, fontSize: '0.82rem' }}>
+          <span
+            style={{ color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline' }}
+            onClick={() => { setStep('list'); setSelectedResource(null); setEditingBooking(null); }}
+          >
+            My Bookings
+          </span>
+          <span style={{ color: 'var(--text-muted)' }}>›</span>
+
+          {step === 'pick' && (
+            <span style={{ color: 'var(--text)' }}>Select Facility</span>
+          )}
+
+          {step === 'form' && (
+            <>
+              <span
+                style={{ color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={() => { setSelectedResource(null); setStep('pick'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              >
+                Select Facility
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>›</span>
+              <span style={{ color: 'var(--text)' }}>{selectedResource?.name || 'Booking Details'}</span>
+            </>
+          )}
+
+          {step === 'edit' && (
+            <span style={{ color: 'var(--text)' }}>Edit Booking</span>
+          )}
+        </div>
+      )}
 
       {/* ── Error ─────────────────────────────────────────────── */}
       {error && (
@@ -119,82 +175,115 @@ export default function MyBookings() {
         </div>
       )}
 
-      {/* ── Booking Form (slide in) ────────────────────────────── */}
-      {showForm && (
+      {/* ══ STEP: PICK ════════════════════════════════════════════ */}
+      {step === 'pick' && (
+        <ResourcePicker
+          resources={resources}
+          onSelect={(resource) => {
+            setSelectedResource(resource);
+            setStep('form');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onCancel={() => setStep('list')}
+        />
+      )}
+
+      {/* ══ STEP: FORM ════════════════════════════════════════════ */}
+      {step === 'form' && (
+        <BookingForm
+          resources={resources}
+          selectedResource={selectedResource}
+          onChangeResource={() => {
+            setSelectedResource(null);
+            setStep('pick');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onSaved={handleBookingSaved}
+          onCancelEdit={() => { setStep('list'); setSelectedResource(null); }}
+        />
+      )}
+
+      {/* ══ STEP: EDIT ════════════════════════════════════════════ */}
+      {step === 'edit' && (
         <BookingForm
           resources={resources}
           initialBooking={editingBooking}
           onSaved={handleBookingSaved}
-          onCancelEdit={() => { setEditingBooking(null); setShowForm(false); }}
+          onCancelEdit={() => { setEditingBooking(null); setStep('list'); }}
         />
       )}
 
-      {/* ── Summary stat chips ────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-        {[
-          { label: 'Total',     value: bookings.length,         color: 'var(--primary)' },
-          { label: 'Pending',   value: counts.PENDING   || 0,   color: '#FBBF24' },
-          { label: 'Approved',  value: counts.APPROVED  || 0,   color: '#34D399' },
-          { label: 'Rejected',  value: counts.REJECTED  || 0,   color: '#F87171' },
-          { label: 'Cancelled', value: counts.CANCELLED || 0,   color: '#9CA3AF' },
-        ].map(s => (
-          <div key={s.label} className="glass-card" style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: '1.1rem', fontWeight: 700, color: s.color }}>{s.value}</span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>{s.label}</span>
+      {/* ══ STEP: LIST ════════════════════════════════════════════ */}
+      {step === 'list' && (
+        <>
+          {/* ── Summary stat chips ──────────────────────────────── */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+            {[
+              { label: 'Total',     value: bookings.length,         color: 'var(--primary)' },
+              { label: 'Pending',   value: counts.PENDING   || 0,   color: '#FBBF24' },
+              { label: 'Approved',  value: counts.APPROVED  || 0,   color: '#34D399' },
+              { label: 'Rejected',  value: counts.REJECTED  || 0,   color: '#F87171' },
+              { label: 'Cancelled', value: counts.CANCELLED || 0,   color: '#9CA3AF' },
+            ].map(s => (
+              <div key={s.label} className="glass-card" style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: '1.1rem', fontWeight: 700, color: s.color }}>{s.value}</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>{s.label}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* ── Filter Bar ────────────────────────────────────────── */}
-      <div className="filter-bar glass-card" style={{ marginTop: 12 }}>
-        <div className="filter-search">
-          <span className="form-input-icon">🔍</span>
-          <input
-            type="text"
-            placeholder="Search by facility or purpose"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="form-input"
-          />
-        </div>
-        <div className="filter-chips">
-          {STATUS_FILTERS.map(s => (
-            <button
-              key={s}
-              className={`filter-chip ${filter === s ? 'filter-chip--active' : ''}`}
-              onClick={() => setFilter(s)}
-            >
-              {s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
-            </button>
-          ))}
-        </div>
-      </div>
+          {/* ── Filter Bar ──────────────────────────────────────── */}
+          <div className="filter-bar glass-card" style={{ marginTop: 12 }}>
+            <div className="filter-search">
+              <span className="form-input-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Search by facility or purpose"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="form-input"
+              />
+            </div>
+            <div className="filter-chips">
+              {STATUS_FILTERS.map(s => (
+                <button
+                  key={s}
+                  className={`filter-chip ${filter === s ? 'filter-chip--active' : ''}`}
+                  onClick={() => setFilter(s)}
+                >
+                  {s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* ── Booking Cards ─────────────────────────────────────── */}
-      {loading ? (
-        <div className="glass-card" style={{ padding: 20, color: 'var(--text-muted)' }}>Loading your bookings...</div>
-      ) : filtered.length === 0 ? (
-        <div className="glass-card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>
-          <p style={{ fontSize: '2.5rem', marginBottom: 10 }}>📅</p>
-          <p style={{ fontWeight: 600, marginBottom: 6 }}>
-            {search || filter !== 'ALL' ? 'No bookings match your filter.' : 'No bookings yet.'}
-          </p>
-          {!search && filter === 'ALL' && (
-            <p style={{ fontSize: '0.85rem' }}>Click <strong>+ New Booking</strong> to get started.</p>
+          {/* ── Booking Cards ───────────────────────────────────── */}
+          {loading ? (
+            <div className="glass-card" style={{ padding: 20, color: 'var(--text-muted)' }}>Loading your bookings...</div>
+          ) : filtered.length === 0 ? (
+            <div className="glass-card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>
+              <p style={{ fontSize: '2.5rem', marginBottom: 10 }}>📅</p>
+              <p style={{ fontWeight: 600, marginBottom: 6 }}>
+                {search || filter !== 'ALL' ? 'No bookings match your filter.' : 'No bookings yet.'}
+              </p>
+              {!search && filter === 'ALL' && (
+                <p style={{ fontSize: '0.85rem' }}>Click <strong>+ New Booking</strong> to get started.</p>
+              )}
+            </div>
+          ) : (
+            <div className="booking-list" style={{ marginTop: 16 }}>
+              {filtered.map(b => (
+                <BookingCard
+                  key={b.id}
+                  booking={b}
+                  onEdit={handleEdit}
+                  onCancel={handleCancel}
+                  onQR={() => setQrModal(b)}
+                />
+              ))}
+            </div>
           )}
-        </div>
-      ) : (
-        <div className="booking-list" style={{ marginTop: 16 }}>
-          {filtered.map(b => (
-            <BookingCard
-              key={b.id}
-              booking={b}
-              onEdit={handleEdit}
-              onCancel={handleCancel}
-              onQR={() => setQrModal(b)}
-            />
-          ))}
-        </div>
+        </>
       )}
 
       {/* ── QR Modal ──────────────────────────────────────────── */}
