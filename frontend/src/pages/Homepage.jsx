@@ -1,12 +1,3 @@
-// function Homepage() {
-//   return (
-//     <div>
-//       <h1>Homepage</h1>
-//     </div>
-//   );
-// }
-
-//export default Homepage;
 import Navbar from '../components/Navbar';
 import HeroSection from '../components/homepage/HeroSection';
 import StatsBar from '../components/homepage/StatsBar';
