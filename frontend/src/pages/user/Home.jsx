@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { bookingService, ticketService } from '../../services/api';
 import StatCard from '../../components/StatCard';
+import './dashboard.css';
 
 /**
  * Student Home — welcome + quick actions + summary cards.
@@ -23,7 +24,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="page-content animate-in">
+    <div className="page-content animate-in dashboard-home">
       {/* Welcome Section */}
       <div className="welcome-section glass-card">
         <div className="welcome-text">

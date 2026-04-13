@@ -1,11 +1,20 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import './modern-pages.css';
 
 /**
  * User Profile page — with Change Password for all roles.
  */
 export default function Profile() {
+  const navigate = useNavigate();
   const { user, logout, changePassword } = useAuth();
+
+  const profileRouteByRole = {
+    ADMIN: '/admin/profile',
+    TECHNICIAN: '/technician/profile',
+    USER: '/profile',
+  };
 
   const [form, setForm] = useState({ current: '', newPass: '', confirm: '' });
   const [pwStatus, setPwStatus] = useState({ msg: '', type: '' }); // type: 'success' | 'error'
@@ -27,6 +36,11 @@ export default function Profile() {
       await changePassword(form.current, form.newPass);
       setPwStatus({ msg: '✅ Password changed successfully!', type: 'success' });
       setForm({ current: '', newPass: '', confirm: '' });
+
+      // Keep each role on its own profile route after password update.
+      setTimeout(() => {
+        navigate(profileRouteByRole[user?.role] ?? '/profile');
+      }, 1500);
     } catch (err) {
       setPwStatus({ msg: err.message || 'Failed to change password.', type: 'error' });
     } finally {
@@ -35,16 +49,16 @@ export default function Profile() {
   };
 
   return (
-    <div className="page-content animate-in">
+    <div className="page-content animate-in user-modern-page user-modern-profile">
       <div className="content-header">
         <h1>My Profile</h1>
         <p>Manage your account settings and personal information.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 900 }}>
+      <div className="modern-profile-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 900 }}>
 
         {/* ── Profile Info Card ── */}
-        <div className="glass-card" style={{ padding: 28 }}>
+        <div className="glass-card modern-panel" style={{ padding: 28 }}>
           <h3 style={{ marginBottom: 20 }}>Account Information</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
             {user?.picture
@@ -90,7 +104,7 @@ export default function Profile() {
         </div>
 
         {/* ── Change Password Card ── */}
-        <div className="glass-card" style={{ padding: 28 }}>
+        <div className="glass-card modern-panel" style={{ padding: 28 }}>
           <h3 style={{ marginBottom: 6 }}>Change Password</h3>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 20 }}>
             {(user?.role === 'ADMIN' || user?.role === 'TECHNICIAN')
