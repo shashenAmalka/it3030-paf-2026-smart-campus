@@ -6,6 +6,7 @@ import ProtectedRoute             from './components/ProtectedRoute';
 import Login                      from './pages/Login';
 import Register                   from './pages/Register';
 import OAuthCallback              from './pages/OAuthCallback';
+import Homepage                   from './pages/Homepage';
 
 // Layouts
 import UserLayout                 from './layouts/UserLayout';
@@ -17,6 +18,7 @@ import Home                       from './pages/user/Home';
 import Resources                  from './pages/user/Resources';
 import MyBookings                 from './pages/user/MyBookings';
 import MyTickets                  from './pages/user/MyTickets';
+import TicketDetailPage           from './pages/tickets/TicketDetailPage';
 import Profile                    from './pages/user/Profile';
 
 // ADMIN pages
@@ -24,6 +26,7 @@ import AdminDashboard             from './pages/admin/Dashboard';
 import ManageResources            from './pages/admin/ManageResources';
 import ManageBookings             from './pages/admin/ManageBookings';
 import ManageTickets              from './pages/admin/ManageTickets';
+import AdminTicketDetail         from './pages/admin/AdminTicketDetail';
 import AdminNotifications         from './pages/admin/Notifications';
 
 // TECHNICIAN pages
@@ -54,7 +57,9 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           {/* ── Public ── */}
-          <Route path="/"              element={<RootRedirect />} />
+          <Route path="/"              element={<Homepage />} />
+          <Route path="/home"          element={<Homepage />} />
+          <Route path="/app"           element={<RootRedirect />} />
           <Route path="/login"         element={<Login />} />
           <Route path="/register"      element={<Register />} />
           <Route path="/oauth-callback" element={<OAuthCallback />} />
@@ -69,6 +74,7 @@ export default function App() {
             <Route path="/resources"    element={<Resources />} />
             <Route path="/my-bookings"  element={<MyBookings />} />
             <Route path="/my-tickets"   element={<MyTickets />} />
+            <Route path="/tickets/:id"  element={<TicketDetailPage />} />
             <Route path="/profile"      element={<Profile />} />
           </Route>
 
@@ -82,6 +88,7 @@ export default function App() {
             <Route path="/admin/resources"     element={<ManageResources />} />
             <Route path="/admin/bookings"      element={<ManageBookings />} />
             <Route path="/admin/tickets"       element={<ManageTickets />} />
+            <Route path="/admin/tickets/:id"  element={<AdminTicketDetail />} />
             <Route path="/admin/notifications" element={<AdminNotifications />} />
           </Route>
 
@@ -94,6 +101,7 @@ export default function App() {
             <Route path="/technician/dashboard"     element={<TechDashboard />} />
             <Route path="/technician/assigned"       element={<AssignedTickets />} />
             <Route path="/technician/unassigned"     element={<UnassignedTickets />} />
+            <Route path="/technician/tickets/:id"   element={<TicketDetailPage />} />
             <Route path="/technician/notifications"  element={<TechNotifications />} />
           </Route>
 
