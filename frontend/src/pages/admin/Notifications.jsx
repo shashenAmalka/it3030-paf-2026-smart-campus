@@ -1,6 +1,8 @@
 import { useNotifications } from '../../hooks/useNotifications';
 import { useNavigate } from 'react-router-dom';
 
+const TICKET_TYPES = new Set(['TICKET', 'TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_UPDATED', 'COMMENT_ADDED', 'DISPUTED', 'CLOSED']);
+
 /**
  * Admin Notifications — full page list.
  */
@@ -11,7 +13,7 @@ export default function Notifications() {
   const handleOpen = async (notification) => {
     await markAsRead(notification.id);
     if (notification.relatedTicketId) {
-      navigate(`/admin/tickets/${notification.relatedTicketId}`);
+      navigate(`/admin/tickets/${notification.relatedTicketId}?tab=chat`);
     }
   };
 
@@ -36,7 +38,7 @@ export default function Notifications() {
             onClick={() => handleOpen(n)}
           >
             <div className="notif-page-icon">
-              {n.type === 'BOOKING' ? '📅' : n.type === 'TICKET' ? '🎫' : '📢'}
+              {n.type === 'BOOKING' ? '📅' : TICKET_TYPES.has(n.type) ? '🎫' : '📢'}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text)' }}>{n.title}</div>

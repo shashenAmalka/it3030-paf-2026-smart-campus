@@ -8,6 +8,7 @@ const TYPE_LABEL = {
   TICKET_CREATED: 'TK',
   TICKET_ASSIGNED: 'TK',
   STATUS_UPDATED: 'TK',
+  COMMENT_ADDED: 'TK',
   DISPUTED: 'TK',
   CLOSED: 'TK',
   SYSTEM: 'SY',
@@ -15,9 +16,9 @@ const TYPE_LABEL = {
 
 function ticketPathByRole(role, ticketId) {
   if (!ticketId) return null;
-  if (role === 'ADMIN') return `/admin/tickets/${ticketId}`;
-  if (role === 'TECHNICIAN') return `/technician/tickets/${ticketId}`;
-  return `/tickets/${ticketId}`;
+  if (role === 'ADMIN') return `/admin/tickets/${ticketId}?tab=chat`;
+  if (role === 'TECHNICIAN') return `/technician/tickets/${ticketId}?tab=conversation`;
+  return `/tickets/${ticketId}?tab=conversation`;
 }
 
 function timeAgo(dateStr) {

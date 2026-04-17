@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../hooks/useNotifications';
 
+const TICKET_TYPES = new Set(['TICKET', 'TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_UPDATED', 'COMMENT_ADDED', 'DISPUTED', 'CLOSED']);
+
 /**
  * User Notifications page.
  */
@@ -11,7 +13,7 @@ export default function UserNotifications() {
   const handleOpen = async (notification) => {
     await markAsRead(notification.id);
     if (notification.relatedTicketId) {
-      navigate(`/tickets/${notification.relatedTicketId}`);
+      navigate(`/tickets/${notification.relatedTicketId}?tab=conversation`);
     }
   };
 
@@ -36,7 +38,7 @@ export default function UserNotifications() {
             onClick={() => handleOpen(n)}
           >
             <div className="notif-page-icon">
-              {n.type === 'BOOKING' ? '📅' : '🎫'}
+              {n.type === 'BOOKING' ? '📅' : TICKET_TYPES.has(n.type) ? '🎫' : '📢'}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text)' }}>{n.title}</div>

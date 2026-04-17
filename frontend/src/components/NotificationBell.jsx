@@ -15,6 +15,7 @@ const TYPE_ICON = {
   TICKET_CREATED: '🎫',
   TICKET_ASSIGNED: '🎫',
   STATUS_UPDATED: '🎫',
+  COMMENT_ADDED: '🎫',
   DISPUTED: '🎫',
   CLOSED: '🎫',
   SYSTEM:  '📢',
@@ -22,9 +23,9 @@ const TYPE_ICON = {
 
 function ticketPathByRole(role, ticketId) {
   if (!ticketId) return null;
-  if (role === 'ADMIN') return `/admin/tickets/${ticketId}`;
-  if (role === 'TECHNICIAN') return `/technician/tickets/${ticketId}`;
-  return `/tickets/${ticketId}`;
+  if (role === 'ADMIN') return `/admin/tickets/${ticketId}?tab=chat`;
+  if (role === 'TECHNICIAN') return `/technician/tickets/${ticketId}?tab=conversation`;
+  return `/tickets/${ticketId}?tab=conversation`;
 }
 
 export default function NotificationBell({ role }) {
