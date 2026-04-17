@@ -31,7 +31,7 @@ export default function TicketProgressBar({ status }) {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4 w-full">
-      <div className="relative pb-8">
+      <div className="relative pb-9">
         <div
           className="absolute top-[14px] h-[2px] bg-slate-200"
           style={{ left: `${edgeInsetPercent}%`, right: `${edgeInsetPercent}%` }}
@@ -62,7 +62,7 @@ export default function TicketProgressBar({ status }) {
           }
 
           // Compute label classes
-          let labelClass = "mt-2 text-xs leading-tight text-center whitespace-nowrap ";
+          let labelClass = "text-xs leading-tight text-center whitespace-nowrap ";
           if (isCurrent && !isRejected && !isOnHold) labelClass += "text-indigo-600 font-medium";
           else if (isRejected && i === 0) labelClass += "text-red-500 font-medium";
           else if (isOnHold && i === 1) labelClass += "text-amber-500 font-medium";
@@ -70,13 +70,13 @@ export default function TicketProgressBar({ status }) {
 
           return (
             <div key={step.key} className="flex flex-col items-center px-2">
-              <div className="relative flex justify-center items-center">
+              <div className="relative flex flex-col items-center gap-2">
                 <div className={circleClass}>
                   {(isCompleted && !isRejected && !isOnHold) && <Check size={14} strokeWidth={3} />}
                   {(isRejected && i === 0) && <X size={14} strokeWidth={3} />}
                   {(isOnHold && i === 1) && <Pause size={14} strokeWidth={3} />}
                 </div>
-                <span className={labelClass}>
+                <span className={`${labelClass} px-1`}>
                   {isOnHold && i === 1 ? 'On Hold' : isRejected && i === 0 ? 'Rejected' : step.label}
                 </span>
               </div>
