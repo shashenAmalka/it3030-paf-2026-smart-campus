@@ -182,7 +182,7 @@ export default function MyTickets() {
           className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors duration-150 cursor-pointer" 
           onClick={() => setShowCreate(true)}
         >
-          <Plus size={16} /> + New Ticket
+          <Plus size={16} />  New Ticket
         </button>
       </div>
 

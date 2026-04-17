@@ -25,14 +25,26 @@ export default function TicketProgressBar({ status }) {
   const isRejected = status === 'REJECTED';
   const isOnHold = status === 'ON_HOLD';
   const currentIdx = getStepIndex(status);
+  const edgeInsetPercent = 100 / (STEPS.length * 2);
+  const trackSpanPercent = 100 - edgeInsetPercent * 2;
+  const activeTrackPercent = (currentIdx / (STEPS.length - 1)) * trackSpanPercent;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4 w-full">
-      <div className="flex items-center w-full relative">
+      <div className="relative pb-8">
+        <div
+          className="absolute top-[14px] h-[2px] bg-slate-200"
+          style={{ left: `${edgeInsetPercent}%`, right: `${edgeInsetPercent}%` }}
+        />
+        <div
+          className="absolute top-[14px] h-[2px] bg-indigo-600"
+          style={{ left: `${edgeInsetPercent}%`, width: `${activeTrackPercent}%` }}
+        />
+
+        <div className="relative grid grid-cols-5">
         {STEPS.map((step, i) => {
           const isCompleted = i < currentIdx;
           const isCurrent = i === currentIdx;
-          const isFuture = i > currentIdx;
 
           // Compute circle classes
           let circleClass = "flex items-center justify-center w-7 h-7 rounded-full z-10 shrink-0 ";
@@ -50,16 +62,14 @@ export default function TicketProgressBar({ status }) {
           }
 
           // Compute label classes
-          let labelClass = "absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs mt-2 ";
+          let labelClass = "mt-2 text-xs leading-tight text-center whitespace-nowrap ";
           if (isCurrent && !isRejected && !isOnHold) labelClass += "text-indigo-600 font-medium";
           else if (isRejected && i === 0) labelClass += "text-red-500 font-medium";
           else if (isOnHold && i === 1) labelClass += "text-amber-500 font-medium";
           else labelClass += "text-slate-500";
 
           return (
-            <div key={step.key} className="flex-1 flex items-center relative first:max-w-fit last:flex-none">
-              {/* Connector Line (except for the last item, handled by layout differently or drawn to the next) */}
-              
+            <div key={step.key} className="flex flex-col items-center px-2">
               <div className="relative flex justify-center items-center">
                 <div className={circleClass}>
                   {(isCompleted && !isRejected && !isOnHold) && <Check size={14} strokeWidth={3} />}
@@ -70,16 +80,11 @@ export default function TicketProgressBar({ status }) {
                   {isOnHold && i === 1 ? 'On Hold' : isRejected && i === 0 ? 'Rejected' : step.label}
                 </span>
               </div>
-              
-              {/* Line connector following the circle */}
-              {i < STEPS.length - 1 && (
-                <div className={`h-[2px] flex-1 mx-2 ${isCompleted && !isRejected ? 'bg-indigo-600' : 'bg-slate-200'}`} />
-              )}
             </div>
           );
         })}
+        </div>
       </div>
-      <div className="h-6"></div> {/* Spacer for labels */}
     </div>
   );
 }
