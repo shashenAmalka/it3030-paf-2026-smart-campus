@@ -8,9 +8,6 @@ import Register                   from './pages/Register';
 import OAuthCallback              from './pages/OAuthCallback';
 import Homepage                   from './pages/Homepage';
 
-// Public pages
-import Homepage                   from './pages/Homepage';
-
 // Layouts
 import UserLayout                 from './layouts/UserLayout';
 import AdminLayout                from './layouts/AdminLayout';
@@ -59,16 +56,9 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-<<<<<<< Updated upstream
-          {/* ── Public ── */}
-          <Route path="/"              element={<Homepage />} />
-          <Route path="/home"          element={<Homepage />} />
-          <Route path="/app"           element={<RootRedirect />} />
-=======
           {/* ── Public Routes ── */}
           <Route path="/"              element={<PublicEntry />} />
           <Route path="/home"          element={<Homepage />} />
->>>>>>> Stashed changes
           <Route path="/login"         element={<Login />} />
           <Route path="/register"      element={<Register />} />
           <Route path="/oauth-callback" element={<OAuthCallback />} />
