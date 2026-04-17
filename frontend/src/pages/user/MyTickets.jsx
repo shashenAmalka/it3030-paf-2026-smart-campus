@@ -266,6 +266,15 @@ export default function MyTickets() {
     return 'bg-slate-100 text-slate-500 border-slate-200';
   };
 
+  const getRowAccentClass = (status) => {
+    if (status === 'OPEN') return 'border-l-blue-500';
+    if (status === 'IN_PROGRESS') return 'border-l-amber-500';
+    if (status === 'WAITING_USER_CONFIRMATION') return 'border-l-violet-500';
+    if (status === 'RESOLVED' || status === 'CLOSED') return 'border-l-green-500';
+    if (status === 'REJECTED') return 'border-l-rose-500';
+    return 'border-l-slate-300';
+  };
+
   const formatRelativeDate = (dateValue) => {
     const target = new Date(dateValue || Date.now()).getTime();
     const now = Date.now();
@@ -405,61 +414,79 @@ export default function MyTickets() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4 mt-4">
           {visibleTickets.map((ticket) => (
+            (() => {
+              const createdDate = new Date(ticket.createdAt || Date.now());
+              const day = createdDate.getDate();
+              const month = createdDate.toLocaleString('default', { month: 'short' });
+
+              return (
             <div 
               key={ticket.id} 
-              className={`rounded-2xl border border-slate-200 bg-white p-5 hover:shadow-md transition duration-150 relative ${isOverdue(ticket.slaDeadline) && (ticket.status === 'OPEN' || ticket.status === 'IN_PROGRESS') ? 'border-l-4 border-l-red-500' : ''}`}
+              className={`rounded-2xl border border-slate-200 bg-white p-4 transition duration-150 relative flex flex-wrap sm:flex-nowrap gap-3 sm:gap-4 items-start hover:shadow-md border-l-4 ${isOverdue(ticket.slaDeadline) && (ticket.status === 'OPEN' || ticket.status === 'IN_PROGRESS') ? 'border-l-red-500' : getRowAccentClass(ticket.status)}`}
             >
-              <div className="flex justify-between items-start mb-2">
-                <span className="bg-indigo-50 text-indigo-700 text-xs font-mono font-semibold px-2.5 py-1 rounded-full">{ticket.ticketId || ticket.id}</span>
-                <div className="flex gap-2">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${ticket.priority === 'HIGH' || ticket.priority === 'CRITICAL' ? 'bg-red-50 text-red-700 border-red-200' : ticket.priority === 'MEDIUM' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-                    {getPriorityOptionLabel(ticket.priority)}
-                  </span>
+              <div className="min-w-[58px] text-center bg-slate-50 rounded-xl px-2 py-2.5 border border-slate-100">
+                <div className="text-2xl font-bold text-slate-800 leading-none">{day}</div>
+                <div className="text-[11px] mt-1 uppercase tracking-wide text-slate-500 font-semibold">{month}</div>
+              </div>
+
+              <div className="flex-1 min-w-[220px]">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="bg-indigo-50 text-indigo-700 text-xs font-mono font-semibold px-2.5 py-1 rounded-full">{ticket.ticketId || ticket.id}</span>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${ticket.priority === 'HIGH' || ticket.priority === 'CRITICAL' ? 'bg-red-50 text-red-700 border-red-200' : ticket.priority === 'MEDIUM' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                        {getPriorityOptionLabel(ticket.priority)}
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-slate-900 text-base line-clamp-1" title={ticket.title}>{ticket.title}</h3>
+                  </div>
                   <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeClass(ticket.status)}`}>
                     {getStatusLabel(ticket.status)}
                   </span>
                 </div>
+
+                <div className="flex gap-4 mt-2 flex-wrap">
+                  <div className="flex items-center gap-1.5"><MapPin size={12} className="text-slate-400" /><span className="text-xs text-slate-500">{ticket.location}</span></div>
+                  <div className="flex items-center gap-1.5"><Folder size={12} className="text-slate-400" /><span className="text-xs text-slate-500">{ticket.category}</span></div>
+                </div>
+
+                {isOverdue(ticket.slaDeadline) && (ticket.status === 'OPEN' || ticket.status === 'IN_PROGRESS') && (
+                  <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 border border-red-200">
+                    <Clock3 size={12} />
+                    Needs urgent attention
+                  </div>
+                )}
+
+                {(ticket.status === 'OPEN' || ticket.status === 'IN_PROGRESS') && ticket.slaDeadline && (
+                  <div className="mt-3 max-w-xs">
+                    <SLATimer deadline={ticket.slaDeadline} />
+                  </div>
+                )}
               </div>
-              <h3 className="font-semibold text-slate-900 text-base mt-2">{ticket.title}</h3>
-              <p className="text-slate-500 text-sm mt-1 line-clamp-2">{ticket.description}</p>
-              
-              <div className="flex gap-4 mt-3">
-                <div className="flex items-center gap-1.5"><MapPin size={12} className="text-slate-400" /><span className="text-xs text-slate-500">{ticket.location}</span></div>
-                <div className="flex items-center gap-1.5"><Folder size={12} className="text-slate-400" /><span className="text-xs text-slate-500">{ticket.category}</span></div>
-              </div>
 
-              {isOverdue(ticket.slaDeadline) && (ticket.status === 'OPEN' || ticket.status === 'IN_PROGRESS') && (
-                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 border border-red-200">
-                  <Clock3 size={12} />
-                  Needs urgent attention
+              <div className="sm:min-w-[170px] w-full sm:w-auto sm:self-stretch flex flex-col sm:items-end justify-between gap-3 border-t sm:border-t-0 sm:border-l border-slate-100 pt-3 sm:pt-0 sm:pl-4">
+                {ticket.status === 'OPEN' && (
+                  <div className="flex gap-2 sm:justify-end" onClick={(e) => e.stopPropagation()}>
+                    <button className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-lg transition duration-150 font-medium cursor-pointer" onClick={() => openEdit(ticket)}>Edit</button>
+                    <button className="text-xs border border-red-200 text-red-600 hover:bg-red-50 px-3 py-1 rounded-lg transition duration-150 font-medium cursor-pointer" onClick={() => openCancelModal(ticket)} disabled={cancellingId === ticket.id}>{cancellingId === ticket.id ? '...' : 'Cancel'}</button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between sm:flex-col sm:items-end sm:gap-2 w-full">
+                  <span className="text-xs text-slate-400">Created {formatRelativeDate(ticket.createdAt)}</span>
+                  <button
+                    className="text-indigo-600 text-xs font-medium hover:underline cursor-pointer"
+                    onClick={() => navigate(`/tickets/${ticket.id}`)}
+                  >
+                    View details →
+                  </button>
                 </div>
-              )}
-
-              {(ticket.status === 'OPEN' || ticket.status === 'IN_PROGRESS') && ticket.slaDeadline && (
-                <div className="mt-3">
-                  <SLATimer deadline={ticket.slaDeadline} />
-                </div>
-              )}
-
-              {ticket.status === 'OPEN' && (
-                <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                  <button className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-lg transition duration-150 font-medium cursor-pointer" onClick={() => openEdit(ticket)}>Edit</button>
-                  <button className="text-xs border border-red-200 text-red-600 hover:bg-red-50 px-3 py-1 rounded-lg transition duration-150 font-medium cursor-pointer" onClick={() => openCancelModal(ticket)} disabled={cancellingId === ticket.id}>{cancellingId === ticket.id ? '...' : 'Cancel'}</button>
-                </div>
-              )}
-
-              <div className="border-t border-slate-100 mt-4 pt-3 flex justify-between items-center">
-                <span className="text-xs text-slate-400">Created {formatRelativeDate(ticket.createdAt)}</span>
-                <button
-                  className="text-indigo-600 text-xs font-medium hover:underline cursor-pointer"
-                  onClick={() => navigate(`/tickets/${ticket.id}`)}
-                >
-                  View details →
-                </button>
               </div>
             </div>
+              );
+            })()
           ))}
         </div>
       )}

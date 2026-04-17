@@ -1,13 +1,11 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import NotificationBell from '../components/NotificationBell';
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard',     icon: '📊', label: 'Dashboard'     },
   { to: '/admin/resources',     icon: '🏛️', label: 'Resources'     },
   { to: '/admin/bookings',      icon: '📅', label: 'Bookings'      },
   { to: '/admin/tickets',       icon: '🎫', label: 'Tickets'       },
-  { to: '/admin/notifications', icon: '🔔', label: 'Notifications' },
   { to: '/admin/profile',       icon: '👤', label: 'Profile'       },
 ];
 
