@@ -18,6 +18,7 @@ import Home                       from './pages/user/Home';
 import Resources                  from './pages/user/Resources';
 import MyBookings                 from './pages/user/MyBookings';
 import MyTickets                  from './pages/user/MyTickets';
+import UserNotifications          from './pages/user/Notifications';
 import TicketDetailPage           from './pages/tickets/TicketDetailPage';
 import Profile                    from './pages/user/Profile';
 
@@ -73,6 +74,7 @@ export default function App() {
             <Route path="/resources"    element={<Resources />} />
             <Route path="/my-bookings"  element={<MyBookings />} />
             <Route path="/my-tickets"   element={<MyTickets />} />
+            <Route path="/notifications" element={<UserNotifications />} />
             <Route path="/tickets/:id"  element={<TicketDetailPage />} />
             <Route path="/profile"      element={<Profile />} />
           </Route>

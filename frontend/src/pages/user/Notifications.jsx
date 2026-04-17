@@ -1,17 +1,17 @@
-import { useNotifications } from '../../hooks/useNotifications';
 import { useNavigate } from 'react-router-dom';
+import { useNotifications } from '../../hooks/useNotifications';
 
 /**
- * Technician Notifications page.
+ * User Notifications page.
  */
-export default function TechNotifications() {
+export default function UserNotifications() {
   const navigate = useNavigate();
-  const { notifications, markAsRead } = useNotifications('TECHNICIAN');
+  const { notifications, markAsRead } = useNotifications('USER');
 
   const handleOpen = async (notification) => {
     await markAsRead(notification.id);
     if (notification.relatedTicketId) {
-      navigate(`/technician/tickets/${notification.relatedTicketId}`);
+      navigate(`/tickets/${notification.relatedTicketId}`);
     }
   };
 
@@ -19,24 +19,24 @@ export default function TechNotifications() {
     <div className="animate-in">
       <div className="content-header">
         <h1>Notifications</h1>
-        <p>Your alerts and ticket updates.</p>
+        <p>Your latest booking and ticket updates.</p>
       </div>
 
       <div className="notif-page-list">
         {notifications.length === 0 && (
           <div className="glass-card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>
             <p style={{ fontSize: '2rem', marginBottom: 8 }}>🔔</p>
-            <p>All caught up! No notifications.</p>
+            <p>No notifications.</p>
           </div>
         )}
-        {notifications.map(n => (
+        {notifications.map((n) => (
           <div
             key={n.id}
             className={`notif-page-item glass-card ${n.read ? '' : 'notif-page-item--unread'}`}
             onClick={() => handleOpen(n)}
           >
             <div className="notif-page-icon">
-              {n.type === 'TICKET' ? '🎫' : '📢'}
+              {n.type === 'BOOKING' ? '📅' : '🎫'}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text)' }}>{n.title}</div>

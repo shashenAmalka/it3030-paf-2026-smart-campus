@@ -31,7 +31,6 @@ export default function TicketDetailPage() {
   const currentUser = user || JSON.parse(localStorage.getItem('smartcampus_user') || '{}');
   const isAdmin = currentUser?.role === 'ADMIN';
   const isTech = currentUser?.role === 'TECHNICIAN';
-  const isCreator = ticket && currentUser?.id === ticket.createdBy;
 
   const [ticket, setTicket] = useState(null);
   const [comments, setComments] = useState([]);

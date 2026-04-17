@@ -15,4 +15,6 @@ public interface TicketNotificationRepository extends MongoRepository<TicketNoti
     long countByRecipientIdAndIsReadFalse(String recipientId);
 
     Optional<TicketNotification> findByIdAndRecipientId(String id, String recipientId);
+
+    void deleteByRecipientId(String recipientId);
 }

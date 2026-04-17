@@ -1,10 +1,19 @@
 import { useNotifications } from '../../hooks/useNotifications';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Admin Notifications — full page list.
  */
 export default function Notifications() {
+  const navigate = useNavigate();
   const { notifications, markAsRead } = useNotifications('ADMIN');
+
+  const handleOpen = async (notification) => {
+    await markAsRead(notification.id);
+    if (notification.relatedTicketId) {
+      navigate(`/admin/tickets/${notification.relatedTicketId}`);
+    }
+  };
 
   return (
     <div className="animate-in">
@@ -24,7 +33,7 @@ export default function Notifications() {
           <div
             key={n.id}
             className={`notif-page-item glass-card ${n.read ? '' : 'notif-page-item--unread'}`}
-            onClick={() => markAsRead(n.id)}
+            onClick={() => handleOpen(n)}
           >
             <div className="notif-page-icon">
               {n.type === 'BOOKING' ? '📅' : n.type === 'TICKET' ? '🎫' : '📢'}

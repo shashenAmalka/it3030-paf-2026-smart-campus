@@ -87,4 +87,11 @@ public class TicketNotificationService {
         unread.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(unread);
     }
+
+    /**
+     * Delete all notifications for a user.
+     */
+    public void clearAllForRecipient(String recipientId) {
+        notificationRepository.deleteByRecipientId(recipientId);
+    }
 }
