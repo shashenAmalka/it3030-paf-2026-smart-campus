@@ -1,46 +1,30 @@
-const EVENTS = [
-  {
-    date: '14',
-    month: 'APR',
-    title: 'Innovation Expo 2026',
-    location: 'Main Auditorium',
-    tag: 'Featured',
-  },
-  {
-    date: '18',
-    month: 'APR',
-    title: 'AI Club Workshop',
-    location: 'Computing Lab 5',
-    tag: 'Workshop',
-  },
-  {
-    date: '22',
-    month: 'APR',
-    title: 'Career Fair',
-    location: 'University Grounds',
-    tag: 'Career',
-  },
+﻿const EVENTS = [
+  { date: 'APR 14', title: 'Innovation Lab Open Day', location: 'Computing Auditorium', tag: 'Workshops' },
+  { date: 'APR 16', title: 'Career Fair 2026', location: 'Main Ground', tag: 'Career' },
+  { date: 'APR 20', title: 'Hackathon Kickoff', location: 'Engineering Block', tag: 'Tech' },
+  { date: 'APR 22', title: 'Student Club Expo', location: 'Campus Courtyard', tag: 'Community' },
 ];
 
 export default function UpcomingEvents() {
   return (
-    <article className="hp-panel">
-      <h3>Upcoming on Campus</h3>
-      <div className="hp-events">
+    <section className="hp-panel" aria-label="Upcoming events">
+      <header className="hp-panel__header">
+        <h3>Upcoming on Campus</h3>
+        <a href="/login">Calendar</a>
+      </header>
+
+      <ul className="hp-event-list">
         {EVENTS.map((event) => (
-          <div key={event.title} className="hp-events__item">
-            <div className="hp-events__date">
-              <strong>{event.date}</strong>
-              <span>{event.month}</span>
-            </div>
-            <div>
-              <strong>{event.title}</strong>
+          <li key={`${event.title}-${event.date}`}>
+            <div className="hp-event-date">{event.date}</div>
+            <div className="hp-event-meta">
+              <h4>{event.title}</h4>
               <p>{event.location}</p>
             </div>
-            <span className="hp-events__tag">{event.tag}</span>
-          </div>
+            <span className="hp-event-tag">{event.tag}</span>
+          </li>
         ))}
-      </div>
-    </article>
+      </ul>
+    </section>
   );
 }

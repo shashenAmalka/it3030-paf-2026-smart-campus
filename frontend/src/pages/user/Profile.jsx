@@ -1,54 +1,51 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './profile.css';
+import './modern-pages.css';
 
 /**
  * User Profile page — Extended Personal Details, Activity Summary,
  * Virtual ID Card, and Change Password.
  */
 export default function Profile() {
+  const navigate = useNavigate();
   const { user, logout, changePassword } = useAuth();
+  const userRole = user?.role ?? 'USER';
+
+  const profileRouteByRole = {
+    ADMIN: '/admin/profile',
+    TECHNICIAN: '/technician/profile',
+    USER: '/profile',
+  };
 
   const [form, setForm] = useState({ current: '', newPass: '', confirm: '' });
   const [pwStatus, setPwStatus] = useState({ msg: '', type: '' });
   const [saving, setSaving] = useState(false);
 
-  /* ── Editable fields ────────────────────────────────────────── */
-  const [editMode, setEditMode] = useState(false);
-  const [profile, setProfile] = useState({
-    phone: '',
-    year: '',
-    degree: '',
-  });
-
-  useEffect(() => {
-    // Load any saved extended profile from localStorage
-    const saved = localStorage.getItem(`profile_ext_${user?.email}`);
-    if (saved) setProfile(JSON.parse(saved));
-  }, [user?.email]);
-
-  const handleSaveProfile = () => {
-    localStorage.setItem(`profile_ext_${user?.email}`, JSON.stringify(profile));
-    setEditMode(false);
-  };
-
-  /* ── Change Password ────────────────────────────────────────── */
   const handleChangePassword = async (e) => {
     e.preventDefault();
     setPwStatus({ msg: '', type: '' });
 
     if (form.newPass.length < 6) {
-      return setPwStatus({ msg: 'New password must be at least 6 characters.', type: 'error' });
+      setPwStatus({ msg: 'New password must be at least 6 characters.', type: 'error' });
+      return;
     }
+
     if (form.newPass !== form.confirm) {
-      return setPwStatus({ msg: 'New passwords do not match.', type: 'error' });
+      setPwStatus({ msg: 'New passwords do not match.', type: 'error' });
+      return;
     }
 
     setSaving(true);
     try {
       await changePassword(form.current, form.newPass);
-      setPwStatus({ msg: '✅ Password changed successfully!', type: 'success' });
+      setPwStatus({ msg: 'Password changed successfully!', type: 'success' });
       setForm({ current: '', newPass: '', confirm: '' });
+
+      setTimeout(() => {
+        navigate(profileRouteByRole[user?.role] ?? '/profile');
+      }, 1200);
     } catch (err) {
       setPwStatus({ msg: err.message || 'Failed to change password.', type: 'error' });
     } finally {
@@ -56,7 +53,6 @@ export default function Profile() {
     }
   };
 
-  /* ── Mock activity stats ────────────────────────────────────── */
   const activityStats = [
     { icon: '📅', value: 12, label: 'Total Bookings', color: '#00ADB5' },
     { icon: '✅', value: 8, label: 'Completed', color: '#34D399' },
@@ -64,20 +60,23 @@ export default function Profile() {
     { icon: '🛠️', value: 1, label: 'In Progress', color: '#818CF8' },
   ];
 
-  /* ── Derive display data ────────────────────────────────────── */
-  const itNumber = user?.itNumber || user?.email?.split('@')[0]?.toUpperCase() || 'N/A';
-  const faculty = user?.faculty || 'Faculty of Computing';
+  const accountTypeByRole = {
+    ADMIN: 'Staff Account',
+    TECHNICIAN: 'Technical Account',
+    USER: 'Student Account',
+  };
+  const accountType = accountTypeByRole[userRole] ?? 'Campus Account';
+  const loginMethod = user?.email?.includes('@sliit.lk') ? 'SLIIT Email' : 'Campus Login';
   const joinDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="page-content animate-in">
+    <div className="page-content animate-in user-modern-page user-modern-profile">
       <div className="content-header">
         <h1>My Profile</h1>
         <p>Manage your account settings and personal information.</p>
       </div>
 
-      {/* ── Activity Summary Cards ─────────────────────────────── */}
       <div className="profile-activity-grid">
         {activityStats.map((stat) => (
           <div key={stat.label} className="profile-activity-card glass-card">
@@ -91,11 +90,7 @@ export default function Profile() {
       </div>
 
       <div className="profile-main-grid">
-
-        {/* ── LEFT COLUMN ──────────────────────────────────────── */}
         <div className="profile-left">
-
-          {/* ── Virtual ID Card ─────────────────────────────────── */}
           <div className="virtual-id-card">
             <div className="vid-header">
               <div className="vid-logo">🎓</div>
@@ -103,7 +98,7 @@ export default function Profile() {
                 <span className="vid-uni">SLIIT</span>
                 <span className="vid-label">Smart Campus</span>
               </div>
-              <div className="vid-badge-type">Student ID</div>
+              <div className="vid-badge-type">{accountType}</div>
             </div>
 
             <div className="vid-body">
@@ -117,8 +112,8 @@ export default function Profile() {
 
               <div className="vid-info">
                 <div className="vid-name">{user?.name || 'Student'}</div>
-                <div className="vid-id">{itNumber}</div>
-                <div className="vid-faculty">{faculty}</div>
+                <div className="vid-id" style={{ fontSize: '0.8rem', fontWeight: 600, marginTop: 2 }}>{userRole}</div>
+                <div className="vid-faculty">{loginMethod}</div>
               </div>
             </div>
 
@@ -129,155 +124,78 @@ export default function Profile() {
               </div>
               <div className="vid-detail">
                 <span className="vid-detail-label">Valid</span>
-                <span className="vid-detail-value">{currentYear} — {currentYear + 1}</span>
+                <span className="vid-detail-value">{currentYear} - {currentYear + 1}</span>
               </div>
-            </div>
-
-            <div className="vid-barcode">
-              {[...Array(30)].map((_, i) => (
-                <div
-                  key={i}
-                  className="vid-bar"
-                  style={{
-                    width: Math.random() > 0.5 ? 3 : 2,
-                    height: 28,
-                    opacity: 0.3 + Math.random() * 0.5,
-                  }}
-                />
-              ))}
             </div>
           </div>
 
-          {/* ── Extended Personal Details ───────────────────────── */}
           <div className="glass-card profile-details-card">
             <div className="profile-details-header">
               <h3>Personal Information</h3>
-              {!editMode ? (
-                <button className="btn-sm btn-sm--primary" onClick={() => setEditMode(true)}>
-                  ✏️ Edit
-                </button>
-              ) : (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn-sm btn-sm--success" onClick={handleSaveProfile}>💾 Save</button>
-                  <button className="btn-sm btn-sm--danger" onClick={() => setEditMode(false)}>✕</button>
-                </div>
-              )}
+              <span className="role-badge" style={{ color: '#1B2A4A', borderColor: '#E2E8F0', background: '#F8FAFC' }}>
+                {accountType}
+              </span>
             </div>
 
             <div className="profile-detail-grid">
-              {/* Read-only fields */}
               <div className="profile-detail-item profile-detail--locked">
-                <div className="profile-detail-icon">🆔</div>
+                <div className="profile-detail-icon">@</div>
                 <div>
-                  <div className="profile-detail-label">Student ID <span className="profile-lock-badge">🔒</span></div>
-                  <div className="profile-detail-value">{itNumber}</div>
-                </div>
-              </div>
-
-              <div className="profile-detail-item profile-detail--locked">
-                <div className="profile-detail-icon">📧</div>
-                <div>
-                  <div className="profile-detail-label">Email <span className="profile-lock-badge">🔒</span></div>
+                  <div className="profile-detail-label">Email</div>
                   <div className="profile-detail-value">{user?.email}</div>
                 </div>
               </div>
 
               <div className="profile-detail-item profile-detail--locked">
-                <div className="profile-detail-icon">🎓</div>
+                <div className="profile-detail-icon">R</div>
                 <div>
-                  <div className="profile-detail-label">Faculty <span className="profile-lock-badge">🔒</span></div>
-                  <div className="profile-detail-value">{faculty}</div>
-                </div>
-              </div>
-
-              <div className="profile-detail-item profile-detail--locked">
-                <div className="profile-detail-icon">🛡️</div>
-                <div>
-                  <div className="profile-detail-label">Role <span className="profile-lock-badge">🔒</span></div>
+                  <div className="profile-detail-label">Role</div>
                   <div className="profile-detail-value">
                     <span className={`role-badge ${user?.role}`}>{user?.role}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Editable fields */}
-              <div className="profile-detail-item">
-                <div className="profile-detail-icon">📱</div>
-                <div style={{ flex: 1 }}>
-                  <div className="profile-detail-label">Phone Number</div>
-                  {editMode ? (
-                    <input
-                      type="tel"
-                      className="profile-edit-input"
-                      value={profile.phone}
-                      onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
-                      placeholder="+94 XX XXX XXXX"
-                    />
-                  ) : (
-                    <div className="profile-detail-value">{profile.phone || '—'}</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="profile-detail-item">
-                <div className="profile-detail-icon">📚</div>
-                <div style={{ flex: 1 }}>
-                  <div className="profile-detail-label">Degree Program</div>
-                  {editMode ? (
-                    <input
-                      type="text"
-                      className="profile-edit-input"
-                      value={profile.degree}
-                      onChange={(e) => setProfile((p) => ({ ...p, degree: e.target.value }))}
-                      placeholder="BSc (Hons) in IT"
-                    />
-                  ) : (
-                    <div className="profile-detail-value">{profile.degree || '—'}</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="profile-detail-item">
-                <div className="profile-detail-icon">🗓️</div>
-                <div style={{ flex: 1 }}>
-                  <div className="profile-detail-label">Year of Study</div>
-                  {editMode ? (
-                    <select
-                      className="profile-edit-input"
-                      value={profile.year}
-                      onChange={(e) => setProfile((p) => ({ ...p, year: e.target.value }))}
-                    >
-                      <option value="">Select year</option>
-                      <option value="1st Year">1st Year</option>
-                      <option value="2nd Year">2nd Year</option>
-                      <option value="3rd Year">3rd Year</option>
-                      <option value="4th Year">4th Year</option>
-                    </select>
-                  ) : (
-                    <div className="profile-detail-value">{profile.year || '—'}</div>
-                  )}
+              <div className="profile-detail-item profile-detail--locked">
+                <div className="profile-detail-icon">N</div>
+                <div>
+                  <div className="profile-detail-label">Name</div>
+                  <div className="profile-detail-value">{user?.name || '-'}</div>
                 </div>
               </div>
 
               <div className="profile-detail-item profile-detail--locked">
-                <div className="profile-detail-icon">📅</div>
+                <div className="profile-detail-icon">M</div>
                 <div>
                   <div className="profile-detail-label">Member Since</div>
                   <div className="profile-detail-value">{joinDate}</div>
+                </div>
+              </div>
+
+              <div className="profile-detail-item profile-detail--locked">
+                <div className="profile-detail-icon">S</div>
+                <div>
+                  <div className="profile-detail-label">Session Type</div>
+                  <div className="profile-detail-value">{loginMethod}</div>
+                </div>
+              </div>
+
+              <div className="profile-detail-item profile-detail--locked">
+                <div className="profile-detail-icon">V</div>
+                <div>
+                  <div className="profile-detail-label">Profile Valid</div>
+                  <div className="profile-detail-value">{currentYear} - {currentYear + 1}</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── RIGHT COLUMN ─────────────────────────────────────── */}
         <div className="profile-right">
-
-          {/* ── Change Password Card ───────────────────────────── */}
           <div className="glass-card profile-panel" style={{ padding: 28 }}>
             <h3 style={{ marginBottom: 6 }}>Change Password</h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 20 }}>
-              {(user?.role === 'ADMIN' || user?.role === 'TECHNICIAN')
+              {(userRole === 'ADMIN' || userRole === 'TECHNICIAN')
                 ? 'Update your staff account password. Changes apply immediately.'
                 : 'Update your account password.'}
             </p>
@@ -312,6 +230,7 @@ export default function Profile() {
                   />
                 </div>
               </div>
+
               <div className="form-group">
                 <label className="form-label">New Password</label>
                 <div className="form-input-wrapper">
@@ -326,6 +245,7 @@ export default function Profile() {
                   />
                 </div>
               </div>
+
               <div className="form-group">
                 <label className="form-label">Confirm New Password</label>
                 <div className="form-input-wrapper">
@@ -340,22 +260,22 @@ export default function Profile() {
                   />
                 </div>
               </div>
+
               <button
                 type="submit"
                 className="btn-primary btn-glow"
                 disabled={saving || !form.current || !form.newPass || !form.confirm}
               >
-                {saving ? '⏳ Saving…' : '🔐 Update Password'}
+                {saving ? 'Saving...' : 'Update Password'}
               </button>
             </form>
           </div>
 
-          {/* ── Sign Out ───────────────────────────────────────── */}
           <button
             className="btn-primary btn-danger profile-signout-btn"
             onClick={logout}
           >
-            🚪 Sign Out
+            Sign Out
           </button>
         </div>
       </div>
