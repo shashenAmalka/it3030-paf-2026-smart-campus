@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import MobileDrawer from './MobileDrawer';
-import './navbar.css';
 
 const SECTION_LINKS = [
   { id: 'home', label: 'Home' },
@@ -11,7 +10,7 @@ const SECTION_LINKS = [
   { id: 'about', label: 'About' },
 ];
 
-function GuestNav({ currentPath }) {
+export default function GuestNav({ currentPath }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeId, setActiveId] = useState('home');
@@ -24,7 +23,7 @@ function GuestNav({ currentPath }) {
   );
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
+    const onScroll = () => setScrolled(window.scrollY > 80);
     onScroll();
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
@@ -81,7 +80,7 @@ function GuestNav({ currentPath }) {
         </nav>
 
         <div className="guest-nav__actions">
-          
+          <Link to="/login" className="guest-nav__btn guest-nav__btn--primary">Report Item</Link>
           <Link to="/login" className="guest-nav__link">Login</Link>
           <Link to="/register" className="guest-nav__btn guest-nav__btn--outline">Register</Link>
         </div>
@@ -104,6 +103,7 @@ function GuestNav({ currentPath }) {
         title="Menu"
         links={links}
         actions={[
+          { label: 'Report Item', to: '/login', kind: 'primary' },
           { label: 'Login', to: '/login', kind: 'ghost' },
           { label: 'Register', to: '/register', kind: 'outline' },
         ]}
@@ -112,5 +112,3 @@ function GuestNav({ currentPath }) {
     </header>
   );
 }
-
-export default GuestNav;

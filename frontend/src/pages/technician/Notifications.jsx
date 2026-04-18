@@ -1,10 +1,21 @@
 import { useNotifications } from '../../hooks/useNotifications';
+import { useNavigate } from 'react-router-dom';
+
+const TICKET_TYPES = new Set(['TICKET', 'TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_UPDATED', 'COMMENT_ADDED', 'DISPUTED', 'CLOSED']);
 
 /**
  * Technician Notifications page.
  */
 export default function TechNotifications() {
+  const navigate = useNavigate();
   const { notifications, markAsRead } = useNotifications('TECHNICIAN');
+
+  const handleOpen = async (notification) => {
+    await markAsRead(notification.id);
+    if (notification.relatedTicketId) {
+      navigate(`/technician/tickets/${notification.relatedTicketId}?tab=conversation`);
+    }
+  };
 
   return (
     <div className="animate-in">
@@ -24,10 +35,10 @@ export default function TechNotifications() {
           <div
             key={n.id}
             className={`notif-page-item glass-card ${n.read ? '' : 'notif-page-item--unread'}`}
-            onClick={() => markAsRead(n.id)}
+            onClick={() => handleOpen(n)}
           >
             <div className="notif-page-icon">
-              {n.type === 'TICKET' ? '🎫' : '📢'}
+              {TICKET_TYPES.has(n.type) ? '🎫' : '📢'}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text)' }}>{n.title}</div>
