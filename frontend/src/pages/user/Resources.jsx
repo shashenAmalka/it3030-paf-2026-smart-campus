@@ -15,6 +15,99 @@ var RESOURCE_TYPES = [
   "EQUIPMENT"
 ];
 
+function toSafeLower(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function toNumberOrNull(value) {
+  if (value === "" || value == null) return null;
+  var num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function getCapacityTarget(minCapacity, maxCapacity) {
+  var min = toNumberOrNull(minCapacity);
+  var max = toNumberOrNull(maxCapacity);
+
+  if (min != null && max != null) return (min + max) / 2;
+  if (min != null) return min;
+  if (max != null) return max;
+  return null;
+}
+
+function getScoredRecommendations(resources, filters) {
+  if (!Array.isArray(resources) || resources.length === 0) return [];
+
+  var targetCapacity = getCapacityTarget(filters.minCapacity, filters.maxCapacity);
+  var min = toNumberOrNull(filters.minCapacity);
+  var max = toNumberOrNull(filters.maxCapacity);
+  var searchText = toSafeLower(filters.search);
+  var locationText = toSafeLower(filters.location);
+  var typeFilter = String(filters.type || "ALL").toUpperCase();
+
+  var scored = resources.map(function (resource) {
+    var score = 0;
+    var reasons = [];
+
+    var type = String(resource.type || "").toUpperCase();
+    var location = toSafeLower(resource.location || resource.hallId);
+    var name = toSafeLower(resource.name);
+    var desc = toSafeLower(resource.description);
+    var capacity = Number(resource.capacity);
+    var active = resource.status === "ACTIVE";
+
+    if (typeFilter === "ALL" || type === typeFilter) {
+      score += 20;
+      if (typeFilter !== "ALL") reasons.push("Matches selected type");
+    } else {
+      score -= 30;
+    }
+
+    if (!locationText || location.indexOf(locationText) >= 0) {
+      score += 15;
+      if (locationText) reasons.push("Matches preferred location");
+    } else {
+      score -= 12;
+    }
+
+    if (!searchText || name.indexOf(searchText) >= 0 || location.indexOf(searchText) >= 0 || desc.indexOf(searchText) >= 0) {
+      score += 10;
+    } else {
+      score -= 8;
+    }
+
+    if (Number.isFinite(capacity)) {
+      if ((min == null || capacity >= min) && (max == null || capacity <= max)) {
+        score += 20;
+        if (min != null || max != null) reasons.push("Within your capacity range");
+      }
+
+      if (targetCapacity != null) {
+        var diff = Math.abs(capacity - targetCapacity);
+        var closeness = Math.max(0, 18 - Math.floor(diff / 5));
+        score += closeness;
+        if (closeness >= 12) reasons.push("Capacity is close to your target");
+      }
+    }
+
+    if (active) {
+      score += 12;
+      reasons.push("Currently active and available for booking");
+    } else {
+      score -= 25;
+    }
+
+    return {
+      resource: resource,
+      score: score,
+      reasons: reasons
+    };
+  });
+
+  scored.sort(function (a, b) { return b.score - a.score; });
+  return scored;
+}
+
 export default function Resources() {
   var stateResources = useState([]);
   var resources = stateResources[0];
@@ -77,6 +170,18 @@ export default function Resources() {
       setLoading(false);
     }
   }
+
+  var scoredRecommendations = getScoredRecommendations(resources, {
+    type: filter,
+    search: search,
+    location: location,
+    minCapacity: minCapacity,
+    maxCapacity: maxCapacity
+  });
+  var recommendation = scoredRecommendations.length > 0 ? scoredRecommendations[0] : null;
+  var recommended = recommendation ? recommendation.resource : null;
+  var recommendationReasons = recommendation ? recommendation.reasons.slice(0, 3) : [];
+  var alternativeRecommendations = scoredRecommendations.slice(1, 4);
 
   return (
     <div className="page-content animate-in">
@@ -164,8 +269,111 @@ export default function Resources() {
       ) : resources.length === 0 ? (
         <div className="glass-card" style={{ padding: 20 }}>No resources found.</div>
       ) : (
-        <div className="rm-card-grid">
-          {resources.map(function (resource) {
+        <>
+          {recommended ? (
+            <div className="glass-card" style={{ marginBottom: 16, padding: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                    Smart Recommendation
+                  </div>
+                  <h3 style={{ margin: "4px 0 6px" }}>{recommended.name}</h3>
+                  <p style={{ margin: 0, fontSize: "0.82rem" }}>
+                    Best match based on your current filters (score: {recommendation.score})
+                  </p>
+                </div>
+                <button
+                  className="btn-secondary"
+                  style={{ width: "auto", height: "fit-content" }}
+                  onClick={function () { setSelectedResource(recommended); }}
+                >
+                  View details
+                </button>
+              </div>
+
+              <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {recommendationReasons.map(function (reason) {
+                  return (
+                    <span
+                      key={reason}
+                      className="filter-chip filter-chip--active"
+                      style={{ textTransform: "none", letterSpacing: 0, fontSize: "0.72rem" }}
+                    >
+                      {reason}
+                    </span>
+                  );
+                })}
+              </div>
+
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700, marginBottom: 6 }}>
+                  Why this recommendation?
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  <span className="filter-chip" style={{ textTransform: "none", letterSpacing: 0, fontSize: "0.72rem" }}>
+                    Type match: +20
+                  </span>
+                  <span className="filter-chip" style={{ textTransform: "none", letterSpacing: 0, fontSize: "0.72rem" }}>
+                    Location match: +15
+                  </span>
+                  <span className="filter-chip" style={{ textTransform: "none", letterSpacing: 0, fontSize: "0.72rem" }}>
+                    Capacity range/fit: up to +38
+                  </span>
+                  <span className="filter-chip" style={{ textTransform: "none", letterSpacing: 0, fontSize: "0.72rem" }}>
+                    Active status bonus: +12
+                  </span>
+                </div>
+              </div>
+
+              {alternativeRecommendations.length > 0 ? (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700, marginBottom: 6 }}>
+                    Top Alternatives
+                  </div>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {alternativeRecommendations.map(function (item) {
+                      return (
+                        <div
+                          key={item.resource.id}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: 8,
+                            border: "1px solid var(--border)",
+                            borderRadius: "10px",
+                            padding: "8px 10px"
+                          }}
+                        >
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, fontSize: "0.86rem" }}>{item.resource.name}</div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                              {formatResourceType(item.resource.type)} • Capacity {item.resource.capacity || "-"}
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span className="filter-chip filter-chip--active" style={{ fontSize: "0.7rem", padding: "3px 8px" }}>
+                              Score {item.score}
+                            </span>
+                            <button
+                              className="btn-secondary"
+                              style={{ width: "auto", padding: "6px 10px" }}
+                              onClick={function () { setSelectedResource(item.resource); }}
+                            >
+                              View
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="rm-card-grid">
+            {resources.map(function (resource) {
             var visual = getResourceVisual(resource.type);
             var active = resource.status === "ACTIVE";
             var hoursText = (resource.availableFrom || "--:--") + " - " + (resource.availableTo || "--:--");
@@ -207,8 +415,9 @@ export default function Resources() {
                 </div>
               </div>
             );
-          })}
-        </div>
+            })}
+          </div>
+        </>
       )}
 
       <ResourceDetailsModal
