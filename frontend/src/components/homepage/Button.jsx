@@ -1,18 +1,19 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 
 export default function Button({
+  children,
+  variant = 'primary',
   to,
   href,
-  variant = 'primary',
-  className = '',
   onClick,
-  children,
+  className = '',
+  type = 'button',
 }) {
   const classes = `hp-btn hp-btn--${variant} ${className}`.trim();
 
   if (to) {
     return (
-      <Link to={to} className={classes} onClick={onClick}>
+      <Link to={to} className={classes}>
         {children}
       </Link>
     );
@@ -20,14 +21,14 @@ export default function Button({
 
   if (href) {
     return (
-      <a href={href} className={classes} onClick={onClick}>
+      <a href={href} className={classes}>
         {children}
       </a>
     );
   }
 
   return (
-    <button type="button" className={classes} onClick={onClick}>
+    <button type={type} className={classes} onClick={onClick}>
       {children}
     </button>
   );

@@ -1,13 +1,12 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import NotificationBell from '../components/NotificationBell';
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard',     icon: '📊', label: 'Dashboard'     },
   { to: '/admin/resources',     icon: '🏛️', label: 'Resources'     },
   { to: '/admin/bookings',      icon: '📅', label: 'Bookings'      },
   { to: '/admin/tickets',       icon: '🎫', label: 'Tickets'       },
-  { to: '/admin/notifications', icon: '🔔', label: 'Notifications' },
+  { to: '/admin/profile',       icon: '👤', label: 'Profile'       },
 ];
 
 export default function AdminLayout() {
@@ -20,7 +19,7 @@ export default function AdminLayout() {
       <nav className="sidebar">
         <div className="sidebar-logo">
           <img src="/sliit-campus-logo-.png" alt="SLIIT" style={{ width: 28, height: 28, objectFit: 'contain' }} />
-          <span style={{ color: '#F87171' }}>Admin Panel</span>
+          <span className="font-bold text-slate-800">Admin Panel</span>
         </div>
 
         {NAV_ITEMS.map(item => (
@@ -49,7 +48,7 @@ export default function AdminLayout() {
           <div>
             <div
               style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', marginBottom: 8, cursor: 'pointer' }}
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/admin/profile')}
             >
               {user.picture
                 ? <img src={user.picture} alt="" className="user-avatar" style={{ width: 36, height: 36 }} />
