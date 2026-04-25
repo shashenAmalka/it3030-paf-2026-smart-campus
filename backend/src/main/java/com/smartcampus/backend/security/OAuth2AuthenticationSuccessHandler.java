@@ -69,7 +69,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             }
 
             final String normalizedEmail = email.trim().toLowerCase();
-            Optional<User> userOptional = userRepository.findByEmail(normalizedEmail);
+            Optional<User> userOptional = userRepository.findByEmailIgnoreCase(normalizedEmail);
             String targetUrl;
 
             if (userOptional.isPresent()) {

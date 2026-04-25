@@ -86,7 +86,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 ? List.of()
                 : Arrays.asList(adminEmailsConfig.split(","));
 
-        Optional<User> existingUser = userRepository.findByEmail(normalizedEmail);
+        Optional<User> existingUser = userRepository.findByEmailIgnoreCase(normalizedEmail);
 
         if (existingUser.isPresent()) {
             User user = existingUser.get();
