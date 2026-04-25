@@ -71,7 +71,8 @@ public class AuthController {
         }
 
         // Check if email already exists
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        String emailToRegister = request.getEmail() != null ? request.getEmail().trim() : "";
+        if (userRepository.findByEmailIgnoreCase(emailToRegister).isPresent()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Email already registered"));
         }
 
@@ -106,10 +107,11 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
-        Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+        String email = request.getEmail() != null ? request.getEmail().trim() : "";
+        Optional<User> userOptional = userRepository.findByEmailIgnoreCase(email);
 
         if (userOptional.isEmpty()) {
-            loginAuditService.logFailed(request.getEmail(), "PASSWORD", "Invalid credentials");
+            loginAuditService.logFailed(email, "PASSWORD", "Invalid credentials");
             return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password"));
         }
 
@@ -207,7 +209,7 @@ public class AuthController {
         }
 
         // Find user by email
-        Optional<User> userOptional = userRepository.findByEmail(userEmail);
+        Optional<User> userOptional = userRepository.findByEmailIgnoreCase(userEmail);
         if (userOptional.isEmpty()) {
             return ResponseEntity.status(404).body(Map.of("error", "User not found"));
         }
