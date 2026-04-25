@@ -36,9 +36,6 @@ export default function Homepage() {
           </div>
 
           <div className="new-hp-nav-actions">
-            <Link to="/login" className="new-hp-btn new-hp-btn-orange">
-              Report Item
-            </Link>
             <Link to="/login" className="new-hp-btn new-hp-btn-glass">
               Login/Register
             </Link>
