@@ -7,6 +7,7 @@ import com.smartcampus.backend.model.Role;
 import com.smartcampus.backend.model.User;
 import com.smartcampus.backend.repository.UserRepository;
 import com.smartcampus.backend.security.JwtService;
+import com.smartcampus.backend.service.LoginAuditService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -34,6 +35,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final LoginAuditService loginAuditService;
 
     @Value("${app.admin-emails:}")
     private String adminEmailsConfig;
@@ -107,6 +109,7 @@ public class AuthController {
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
 
         if (userOptional.isEmpty()) {
+            loginAuditService.logFailed(request.getEmail(), "PASSWORD", "Invalid credentials");
             return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password"));
         }
 
@@ -120,6 +123,7 @@ public class AuthController {
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            loginAuditService.logFailed(request.getEmail(), "PASSWORD", "Invalid credentials");
             return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password"));
         }
 
@@ -137,6 +141,7 @@ public class AuthController {
             org.springframework.security.core.context.SecurityContextHolder.getContext());
 
         String token = jwtService.generateToken(user.getEmail());
+        loginAuditService.logSuccess(user.getEmail(), user.getRole().name(), "PASSWORD");
 
         return ResponseEntity.ok(Map.of(
                 "id",      user.getId(),
