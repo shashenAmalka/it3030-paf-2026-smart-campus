@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { resourceService } from "../../services/api";
 import StatCard from "../../components/StatCard";
 import GlassTable from "../../components/GlassTable";
+import ResourceLocationMap from "../../components/resource/ResourceLocationMap";
 import { formatResourceType, getResourceVisual } from "../../components/resource/resourceVisuals";
 import {
   BUILDING_OPTIONS,
@@ -36,6 +37,8 @@ var EMPTY_FORM = {
   block: "A",
   floor: "",
   hallNumber: "",
+  latitude: "",
+  longitude: "",
   facilities: [],
   status: "ACTIVE"
 };
@@ -53,6 +56,8 @@ function cloneEmptyForm() {
     block: EMPTY_FORM.block,
     floor: EMPTY_FORM.floor,
     hallNumber: EMPTY_FORM.hallNumber,
+    latitude: EMPTY_FORM.latitude,
+    longitude: EMPTY_FORM.longitude,
     facilities: EMPTY_FORM.facilities,
     status: EMPTY_FORM.status
   };
@@ -90,6 +95,15 @@ function parseHallLocation(raw) {
   };
 }
 
+function extractBuildingName(resource) {
+  if (resource && resource.buildingName) {
+    return String(resource.buildingName).trim().toUpperCase();
+  }
+
+  var hallInfo = parseHallLocation(resource ? (resource.hallId || resource.location) : "");
+  return hallInfo ? hallInfo.buildingName : "";
+}
+
 export default function ManageResources() {
   var stateResources = useState([]);
   var resources = stateResources[0];
@@ -122,6 +136,30 @@ export default function ManageResources() {
   var stateSuccessMessage = useState("");
   var successMessage = stateSuccessMessage[0];
   var setSuccessMessage = stateSuccessMessage[1];
+
+  var stateShowLocationPicker = useState(false);
+  var showLocationPicker = stateShowLocationPicker[0];
+  var setShowLocationPicker = stateShowLocationPicker[1];
+
+  var statePickerLocation = useState({ latitude: null, longitude: null });
+  var pickerLocation = statePickerLocation[0];
+  var setPickerLocation = statePickerLocation[1];
+
+  var stateSearchText = useState("");
+  var searchText = stateSearchText[0];
+  var setSearchText = stateSearchText[1];
+
+  var stateFilterType = useState("ALL");
+  var filterType = stateFilterType[0];
+  var setFilterType = stateFilterType[1];
+
+  var stateFilterStatus = useState("ALL");
+  var filterStatus = stateFilterStatus[0];
+  var setFilterStatus = stateFilterStatus[1];
+
+  var stateFilterBuilding = useState("ALL");
+  var filterBuilding = stateFilterBuilding[0];
+  var setFilterBuilding = stateFilterBuilding[1];
 
   useEffect(function () {
     loadResources();
@@ -165,6 +203,8 @@ export default function ManageResources() {
       block: resource.block || (hallInfo ? hallInfo.block : "A"),
       floor: resource.floor != null ? String(resource.floor) : (hallInfo ? hallInfo.floor : ""),
       hallNumber: resource.hallNumber != null ? String(resource.hallNumber) : (hallInfo ? hallInfo.hallNumber : ""),
+      latitude: resource.latitude != null ? String(resource.latitude) : "",
+      longitude: resource.longitude != null ? String(resource.longitude) : "",
       facilities: Array.isArray(resource.facilities) ? resource.facilities : [],
       status: resource.status || "ACTIVE"
     });
@@ -186,6 +226,31 @@ export default function ManageResources() {
       : form.facilities.concat([key]);
 
     setForm({ ...form, facilities: next });
+  }
+
+  function openLocationPicker() {
+    var lat = form.latitude === "" ? null : Number(form.latitude);
+    var lng = form.longitude === "" ? null : Number(form.longitude);
+
+    setPickerLocation({
+      latitude: Number.isFinite(lat) ? lat : null,
+      longitude: Number.isFinite(lng) ? lng : null
+    });
+    setShowLocationPicker(true);
+  }
+
+  function applyPickedLocation() {
+    if (pickerLocation.latitude == null || pickerLocation.longitude == null) {
+      window.alert("Please click a point on the map first.");
+      return;
+    }
+
+    setForm({
+      ...form,
+      latitude: String(pickerLocation.latitude),
+      longitude: String(pickerLocation.longitude)
+    });
+    setShowLocationPicker(false);
   }
 
   async function handleQuickStatusToggle(resource) {
@@ -239,6 +304,24 @@ export default function ManageResources() {
       errors.hallId = "Select valid building/block/floor/hall number";
     }
 
+    var hasLatitudeInput = String(form.latitude).trim() !== "";
+    var hasLongitudeInput = String(form.longitude).trim() !== "";
+    var latitudeValue = null;
+    var longitudeValue = null;
+
+    if (hasLatitudeInput !== hasLongitudeInput) {
+      errors.coordinates = "Please provide both latitude and longitude";
+    } else if (hasLatitudeInput && hasLongitudeInput) {
+      latitudeValue = Number(form.latitude);
+      longitudeValue = Number(form.longitude);
+
+      if (!Number.isFinite(latitudeValue) || !Number.isFinite(longitudeValue)) {
+        errors.coordinates = "Latitude and longitude must be valid numbers";
+      } else if (latitudeValue < -90 || latitudeValue > 90 || longitudeValue < -180 || longitudeValue > 180) {
+        errors.coordinates = "Latitude must be -90 to 90 and longitude must be -180 to 180";
+      }
+    }
+
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       window.alert("Please fix the errors below before saving.");
@@ -259,6 +342,8 @@ export default function ManageResources() {
       block: form.block,
       floor: Number(form.floor),
       hallNumber: Number(form.hallNumber),
+      latitude: latitudeValue,
+      longitude: longitudeValue,
       facilities: form.facilities,
       status: form.status
     };
@@ -306,6 +391,64 @@ export default function ManageResources() {
   var facilityTaggedResources = resources.filter(function (resource) {
     return Array.isArray(resource.facilities) && resource.facilities.length > 0;
   }).length;
+
+  var availableBuildingFilters = Array.from(new Set(
+    BUILDING_OPTIONS.concat(
+      resources
+        .map(function (resource) { return extractBuildingName(resource); })
+        .filter(function (name) { return !!name; })
+    )
+  )).sort();
+
+  var normalizedSearchText = searchText.trim().toLowerCase();
+  var filteredResources = resources.filter(function (resource) {
+    var resourceType = String(resource.type || "").toUpperCase();
+    var resourceStatus = String(resource.status || "").toUpperCase();
+    var resourceBuilding = extractBuildingName(resource);
+
+    if (filterType !== "ALL" && resourceType !== filterType) {
+      return false;
+    }
+
+    if (filterStatus !== "ALL" && resourceStatus !== filterStatus) {
+      return false;
+    }
+
+    if (filterBuilding !== "ALL" && resourceBuilding !== filterBuilding) {
+      return false;
+    }
+
+    if (!normalizedSearchText) {
+      return true;
+    }
+
+    var searchPool = [
+      resource.name,
+      resource.location,
+      resource.hallId,
+      formatResourceType(resource.type),
+      resourceBuilding,
+      String(resource.capacity == null ? "" : resource.capacity)
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return searchPool.indexOf(normalizedSearchText) >= 0;
+  });
+
+  function resetFilters() {
+    setSearchText("");
+    setFilterType("ALL");
+    setFilterStatus("ALL");
+    setFilterBuilding("ALL");
+  }
+
+  var activeFilterCount = [
+    normalizedSearchText ? 1 : 0,
+    filterType !== "ALL" ? 1 : 0,
+    filterStatus !== "ALL" ? 1 : 0,
+    filterBuilding !== "ALL" ? 1 : 0
+  ].reduce(function (sum, value) { return sum + value; }, 0);
 
   var columns = [
     {
@@ -576,6 +719,45 @@ export default function ManageResources() {
               ) : null}
             </div>
 
+            <div className="form-group">
+              <label className="form-label">Map Location (Optional)</label>
+              <div className="form-row">
+                <div className="form-group">
+                  <div className="form-input-wrapper">
+                    <input
+                      className="form-input"
+                      placeholder="Latitude"
+                      value={form.latitude}
+                      onChange={function (e) { setForm({ ...form, latitude: e.target.value }); }}
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <div className="form-input-wrapper">
+                    <input
+                      className="form-input"
+                      placeholder="Longitude"
+                      value={form.longitude}
+                      onChange={function (e) { setForm({ ...form, longitude: e.target.value }); }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="rm-form-actions" style={{ marginTop: 8 }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ width: "auto" }}
+                  onClick={openLocationPicker}
+                >
+                  Pick Location
+                </button>
+              </div>
+              {formErrors.coordinates ? (
+                <div className="rm-inline-error">{formErrors.coordinates}</div>
+              ) : null}
+            </div>
+
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">Available From</label>
@@ -677,10 +859,104 @@ export default function ManageResources() {
         </div>
 
         <div className="glass-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="rm-table-toolbar">
+            <div className="rm-table-toolbar-search">
+              <label className="form-label" htmlFor="resource-search">Search</label>
+              <div className="form-input-wrapper">
+                <input
+                  id="resource-search"
+                  className="form-input"
+                  placeholder="Search by name, hall ID, type, or capacity"
+                  value={searchText}
+                  onChange={function (e) { setSearchText(e.target.value); }}
+                />
+              </div>
+            </div>
+
+            <div className="rm-table-toolbar-filters">
+              <div className="rm-filter-field">
+                <label className="form-label" htmlFor="resource-filter-type">Type</label>
+                <div className="form-input-wrapper">
+                  <select
+                    id="resource-filter-type"
+                    className="form-input"
+                    value={filterType}
+                    onChange={function (e) { setFilterType(e.target.value); }}
+                  >
+                    <option value="ALL">All Types</option>
+                    {RESOURCE_TYPES.map(function (type) {
+                      return (
+                        <option key={type} value={type}>
+                          {formatResourceType(type)}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              <div className="rm-filter-field">
+                <label className="form-label" htmlFor="resource-filter-status">Status</label>
+                <div className="form-input-wrapper">
+                  <select
+                    id="resource-filter-status"
+                    className="form-input"
+                    value={filterStatus}
+                    onChange={function (e) { setFilterStatus(e.target.value); }}
+                  >
+                    <option value="ALL">All Statuses</option>
+                    {RESOURCE_STATUSES.map(function (status) {
+                      return (
+                        <option key={status} value={status}>
+                          {status.split("_").join(" ")}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              <div className="rm-filter-field">
+                <label className="form-label" htmlFor="resource-filter-building">Building</label>
+                <div className="form-input-wrapper">
+                  <select
+                    id="resource-filter-building"
+                    className="form-input"
+                    value={filterBuilding}
+                    onChange={function (e) { setFilterBuilding(e.target.value); }}
+                  >
+                    <option value="ALL">All Buildings</option>
+                    {availableBuildingFilters.map(function (building) {
+                      return (
+                        <option key={building} value={building}>
+                          {building}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="btn-secondary rm-clear-filters"
+                onClick={resetFilters}
+                disabled={activeFilterCount === 0}
+              >
+                Clear
+              </button>
+            </div>
+
+            <div className="rm-filter-summary">
+              Showing {filteredResources.length} of {resources.length} resources
+              {activeFilterCount > 0 ? " (" + activeFilterCount + " filter" + (activeFilterCount > 1 ? "s" : "") + " active)" : ""}
+            </div>
+          </div>
+
           <GlassTable
             columns={columns}
-            data={resources}
-            emptyMessage={loading ? "Loading..." : "No resources found"}
+            data={filteredResources}
+            emptyMessage={loading ? "Loading..." : (resources.length > 0 ? "No resources match your search/filter" : "No resources found")}
             actions={function (row) {
               return (
                 <div style={{ display: "flex", gap: 6 }}>
@@ -696,6 +972,47 @@ export default function ManageResources() {
           />
         </div>
       </div>
+
+      {showLocationPicker ? (
+        <div className="rm-modal-overlay" onClick={function () { setShowLocationPicker(false); }}>
+          <div className="glass-card rm-modal-card rm-location-picker-card" onClick={function (e) { e.stopPropagation(); }}>
+            <div className="rm-modal-body">
+              <h3 style={{ marginTop: 0, marginBottom: 8 }}>Pick Resource Location</h3>
+              <p className="rm-form-note" style={{ marginBottom: 10 }}>
+                Click on the map to pin the location for this resource.
+              </p>
+
+              <ResourceLocationMap
+                interactive={true}
+                latitude={pickerLocation.latitude}
+                longitude={pickerLocation.longitude}
+                onPick={function (picked) {
+                  setPickerLocation({
+                    latitude: picked.latitude,
+                    longitude: picked.longitude
+                  });
+                }}
+                height={320}
+              />
+
+              <div className="rm-location-coordinates">
+                Selected: {pickerLocation.latitude != null && pickerLocation.longitude != null
+                  ? pickerLocation.latitude + ", " + pickerLocation.longitude
+                  : "No point selected"}
+              </div>
+
+              <div className="rm-form-actions" style={{ marginTop: 12 }}>
+                <button className="btn-primary" style={{ width: "auto" }} onClick={applyPickedLocation}>
+                  Use Selected Location
+                </button>
+                <button className="btn-secondary" style={{ width: "auto" }} onClick={function () { setShowLocationPicker(false); }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

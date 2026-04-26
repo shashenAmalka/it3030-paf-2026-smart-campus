@@ -111,7 +111,7 @@ public class AuthController {
         Optional<User> userOptional = userRepository.findByEmailIgnoreCase(email);
 
         if (userOptional.isEmpty()) {
-            loginAuditService.logFailed(email, "PASSWORD", "Invalid credentials");
+            loginAuditService.logFailed(email, "Invalid credentials", httpRequest.getRemoteAddr());
             return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password"));
         }
 
@@ -125,7 +125,7 @@ public class AuthController {
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            loginAuditService.logFailed(request.getEmail(), "PASSWORD", "Invalid credentials");
+            loginAuditService.logFailed(request.getEmail(), "Invalid credentials", httpRequest.getRemoteAddr());
             return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password"));
         }
 
@@ -143,7 +143,7 @@ public class AuthController {
             org.springframework.security.core.context.SecurityContextHolder.getContext());
 
         String token = jwtService.generateToken(user.getEmail());
-        loginAuditService.logSuccess(user.getEmail(), user.getRole().name(), "PASSWORD");
+        loginAuditService.logSuccess(user.getId(), user.getName(), user.getEmail(), user.getRole().name(), "PASSWORD", httpRequest.getRemoteAddr());
 
         return ResponseEntity.ok(Map.of(
                 "id",      user.getId(),
