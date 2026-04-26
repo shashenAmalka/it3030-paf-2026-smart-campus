@@ -254,7 +254,7 @@ export default function ManageBookings() {
       </div>
 
       {/* ── Date selector (only for table view) ───────────────── */}
-      {view === 'table' && (
+      {view !== 'panel' && (
         <div className="glass-card" style={{ padding: '12px 16px', marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>

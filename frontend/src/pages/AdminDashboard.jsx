@@ -1,5 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import { Sidebar } from './Dashboard';
+import LoginActivityDashboard from '../components/admin/LoginActivityDashboard';
 
 const NAV = [
   { icon: '📊', label: 'Overview',    href: '/admin/dashboard' },
@@ -73,6 +74,11 @@ export default function AdminDashboard() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Security Dashboard */}
+        <div className="animate-in" style={{ animationDelay: '0.2s', marginTop: '24px' }}>
+          <LoginActivityDashboard />
         </div>
       </main>
     </div>

@@ -37,6 +37,9 @@ public class Resource {
     private Integer hallNumber;
     private String hallId;
 
+    private Double latitude;
+    private Double longitude;
+
     @Builder.Default
     private List<String> facilities = new ArrayList<>();
 

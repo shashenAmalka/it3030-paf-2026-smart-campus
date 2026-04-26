@@ -28,5 +28,9 @@ public class TicketNotification {
     @Builder.Default
     private boolean isRead = false;
 
+    private boolean hasAction;
+    private String actionType;
+    private boolean actionCompleted;
+
     private Instant createdAt;
 }
