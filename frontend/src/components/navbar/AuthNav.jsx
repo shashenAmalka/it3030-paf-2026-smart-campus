@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import NotificationBadge from './NotificationBadge';
 import UserMenu from './UserMenu';
 import MobileDrawer from './MobileDrawer';
 import BottomTabBar from './BottomTabBar';
-import './navbar.css';
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Home' },
@@ -14,7 +13,7 @@ const NAV_ITEMS = [
   { to: '/profile', label: 'Profile' },
 ];
 
-function AuthNav({ user, currentPath, onLogout }) {
+export default function AuthNav({ user, currentPath, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
@@ -22,7 +21,7 @@ function AuthNav({ user, currentPath, onLogout }) {
   const drawerLinks = useMemo(() => NAV_ITEMS.map((item) => ({ label: item.label, to: item.to })), []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
+    const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
@@ -50,7 +49,7 @@ function AuthNav({ user, currentPath, onLogout }) {
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={({ isActive }) => `auth-nav__tab nav-link ${isActive ? 'is-active active' : ''}`}
+                className={({ isActive }) => `auth-nav__tab ${isActive ? 'is-active' : ''}`}
               >
                 {item.label}
               </NavLink>
@@ -91,5 +90,3 @@ function AuthNav({ user, currentPath, onLogout }) {
     </>
   );
 }
-
-export default AuthNav;

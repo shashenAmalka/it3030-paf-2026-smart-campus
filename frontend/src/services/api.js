@@ -4,7 +4,7 @@ import { mockResources } from '../mock/resources';
 import { mockTickets } from '../mock/tickets';
 import { mockUsers, mockTechnicians } from '../mock/users';
 import { mockNotifications } from '../mock/notifications';
- 
+
 const MOCK_BOOKINGS_STORAGE_KEY = 'smartcampus_mock_bookings';
 
 function cloneBookings(rows) {
@@ -41,16 +41,16 @@ function persistMockBookings() {
 
 // ── Mock bookings fallback with browser persistence ───────────────
 let mockBookings = readPersistedMockBookings();
- 
+
 // ── Shared helpers ───────────────────────────────────────────────
- 
+
 function getApiErrorMessage(error, fallbackMessage) {
   if (error && error.response && error.response.data && error.response.data.error) {
     return error.response.data.error;
   }
   return fallbackMessage;
 }
- 
+
 function toMinutes(timeValue) {
   if (!timeValue || typeof timeValue !== 'string') return 0;
   var parts = timeValue.split(':');
@@ -58,11 +58,11 @@ function toMinutes(timeValue) {
   var minutes = Number(parts[1] || 0);
   return hours * 60 + minutes;
 }
- 
+
 function hasOverlap(startA, endA, startB, endB) {
   return toMinutes(startA) < toMinutes(endB) && toMinutes(endA) > toMinutes(startB);
 }
- 
+
 function getStoredUser() {
   try {
     return JSON.parse(localStorage.getItem('smartcampus_user') || 'null');
@@ -70,7 +70,7 @@ function getStoredUser() {
     return null;
   }
 }
- 
+
 function shouldHydrateBookingName(booking) {
   if (!booking) return false;
   var id = booking.facilityId || booking.resourceId;
@@ -78,7 +78,7 @@ function shouldHydrateBookingName(booking) {
   var current = booking.facilityName || booking.resourceName;
   return !current || current === id;
 }
- 
+
 async function getResourceNameMap() {
   var resources = [];
   try {
@@ -86,7 +86,7 @@ async function getResourceNameMap() {
   } catch {
     resources = mockResources;
   }
- 
+
   return resources.reduce(function (acc, resource) {
     if (resource && resource.id && resource.name) {
       acc[resource.id] = resource.name;
@@ -94,25 +94,25 @@ async function getResourceNameMap() {
     return acc;
   }, {});
 }
- 
+
 async function hydrateBookingsWithResourceNames(rows) {
   var bookings = Array.isArray(rows) ? rows : [];
   if (bookings.length === 0) return bookings;
- 
+
   var needsHydration = bookings.some(shouldHydrateBookingName);
   if (!needsHydration) return bookings;
- 
+
   var nameMap = await getResourceNameMap();
- 
+
   return bookings.map(function (booking) {
     if (!booking) return booking;
- 
+
     var id = booking.facilityId || booking.resourceId;
     if (!id) return booking;
- 
+
     var resolvedName = nameMap[id];
     if (!resolvedName) return booking;
- 
+
     var next = { ...booking };
     if (!next.facilityName || next.facilityName === id) {
       next.facilityName = resolvedName;
@@ -123,17 +123,17 @@ async function hydrateBookingsWithResourceNames(rows) {
     if (!next.resourceId && next.facilityId) {
       next.resourceId = next.facilityId;
     }
- 
+
     return next;
   });
 }
- 
+
 async function hydrateSingleBookingWithResourceName(booking) {
   if (!booking) return booking;
   var rows = await hydrateBookingsWithResourceNames([booking]);
   return rows[0] || booking;
 }
- 
+
 // ── Resource Service ─────────────────────────────────
 export const resourceService = {
   getAll: async function (filters) {
@@ -145,7 +145,7 @@ export const resourceService = {
       throw new Error(getApiErrorMessage(error, 'Failed to load resources'));
     }
   },
- 
+
   getById: async function (id) {
     try {
       var response = await api.get('/api/resources/' + id);
@@ -154,7 +154,7 @@ export const resourceService = {
       throw new Error(getApiErrorMessage(error, 'Failed to load resource'));
     }
   },
- 
+
   create: async function (data) {
     try {
       var response = await api.post('/api/resources', data);
@@ -163,7 +163,7 @@ export const resourceService = {
       throw new Error(getApiErrorMessage(error, 'Failed to create resource'));
     }
   },
- 
+
   update: async function (id, data) {
     try {
       var response = await api.put('/api/resources/' + id, data);
@@ -172,7 +172,7 @@ export const resourceService = {
       throw new Error(getApiErrorMessage(error, 'Failed to update resource'));
     }
   },
- 
+
   delete: async function (id) {
     try {
       await api.delete('/api/resources/' + id);
@@ -180,7 +180,7 @@ export const resourceService = {
       throw new Error(getApiErrorMessage(error, 'Failed to delete resource'));
     }
   },
- 
+
   updateStatus: async function (id, status) {
     try {
       var response = await api.patch('/api/resources/' + id + '/status', { status: status });
@@ -190,10 +190,10 @@ export const resourceService = {
     }
   }
 };
- 
+
 // ── Booking Service ────────────────────────────────────
 export const bookingService = {
- 
+
   getAll: async (filters) => {
     var safeFilters = filters || {};
     try {
@@ -212,7 +212,7 @@ export const bookingService = {
       return hydrateBookingsWithResourceNames(rows);
     }
   },
- 
+
   getById: async (id) => {
     try {
       var booking = (await api.get('/api/bookings/' + id)).data;
@@ -222,7 +222,7 @@ export const bookingService = {
       return hydrateSingleBookingWithResourceName(found);
     }
   },
- 
+
   getByUser: async (userId) => {
     try {
       var all = await bookingService.getAll();
@@ -231,7 +231,7 @@ export const bookingService = {
       return mockBookings.filter(function (b) { return b.userId === userId; });
     }
   },
- 
+
   create: async (data) => {
     try {
       var created = (await api.post('/api/bookings', data)).data;
@@ -245,7 +245,7 @@ export const bookingService = {
       if (overlapping.length > 0) {
         throw new Error(getApiErrorMessage(error, 'Requested time slot conflicts with an existing booking'));
       }
- 
+
       var currentUser = getStoredUser() || {};
       var resource = mockResources.find(function (r) { return r.id === facilityId; });
       var attendees = Number(data.attendees != null ? data.attendees : data.expectedAttendees);
@@ -276,7 +276,7 @@ export const bookingService = {
       return hydrateSingleBookingWithResourceName(nb);
     }
   },
- 
+
   update: async (id, data) => {
     try {
       var updated = (await api.put('/api/bookings/' + id, data)).data;
@@ -285,7 +285,7 @@ export const bookingService = {
       var booking = mockBookings.find(function (b) { return b.id === id; });
       if (!booking) throw new Error('Booking not found');
       if (booking.status !== 'PENDING') throw new Error('Only pending bookings can be updated');
- 
+
       var facilityId = data.facilityId || booking.facilityId || booking.resourceId;
       var conflicts = await bookingService.getFacilityConflicts(facilityId, data.date);
       var overlapping = conflicts.filter(function (b) {
@@ -294,10 +294,10 @@ export const bookingService = {
       if (overlapping.length > 0) {
         throw new Error(getApiErrorMessage(error, 'Requested time slot conflicts with an existing booking'));
       }
- 
+
       var resource = mockResources.find(function (r) { return r.id === facilityId; });
       var attendees = Number(data.attendees != null ? data.attendees : data.expectedAttendees);
- 
+
       booking.facilityId = facilityId;
       booking.facilityName = resource ? resource.name : facilityId;
       booking.resourceId = facilityId;
@@ -308,12 +308,12 @@ export const bookingService = {
       booking.purpose = data.purpose;
       booking.expectedAttendees = attendees;
       booking.updatedAt = new Date().toISOString();
- 
+
       persistMockBookings();
       return hydrateSingleBookingWithResourceName(booking);
     }
   },
- 
+
   approve: async (id, adminNotes) => {
     try {
       var updated = (await api.patch('/api/bookings/' + id + '/approve', { adminNotes: adminNotes || '' })).data;
@@ -330,7 +330,7 @@ export const bookingService = {
       return hydrateSingleBookingWithResourceName(b);
     }
   },
- 
+
   reject: async (id, reason) => {
     try {
       var updated = (await api.patch('/api/bookings/' + id + '/reject', { adminNotes: reason })).data;
@@ -347,7 +347,7 @@ export const bookingService = {
       return hydrateSingleBookingWithResourceName(b);
     }
   },
- 
+
   cancel: async (id) => {
     try {
       var updated = (await api.patch('/api/bookings/' + id + '/cancel')).data;
@@ -399,11 +399,11 @@ export const bookingService = {
             && (b.status === 'PENDING' || b.status === 'APPROVED');
         })
         .sort(function (a, b) { return toMinutes(a.startTime) - toMinutes(b.startTime); });
- 
+
       return hydrateBookingsWithResourceNames(rows);
     }
   },
- 
+
   /**
    * QR Check-in: POST /api/bookings/{id}/checkin
    * Validates QR code and marks the booking as checked in.
@@ -425,13 +425,13 @@ export const bookingService = {
       if (b.checkedIn) {
         throw new Error('Already checked in');
       }
- 
+
       var now = new Date().toISOString();
       b.checkedIn = true;
       b.checkedInAt = now;
       b.updatedAt = now;
       persistMockBookings();
- 
+
       return {
         message: 'Check-in successful! Enjoy your booking.',
         bookingId: id,
@@ -440,7 +440,7 @@ export const bookingService = {
       };
     }
   },
- 
+
   /**
    * Get check-in status: GET /api/bookings/{id}/checkin-status
    * Also triggers auto-cancel on backend if window has expired.
@@ -452,7 +452,7 @@ export const bookingService = {
     } catch {
       var b = mockBookings.find(function (b) { return b.id === id; });
       if (!b) return null;
- 
+
       // Mock auto-cancel logic (15-minute window)
       var autoCancelled = false;
       if (b.status === 'APPROVED' && !b.checkedIn && b.date && b.startTime) {
@@ -460,7 +460,7 @@ export const bookingService = {
         var nowMins = new Date().getHours() * 60 + new Date().getMinutes();
         var timeParts = b.startTime.split(':').map(Number);
         var deadlineMins = timeParts[0] * 60 + timeParts[1] + 15;
- 
+
         if (b.date < today || (b.date === today && nowMins > deadlineMins)) {
           b.status = 'CANCELLED';
           b.adminNotes = 'Auto-cancelled: no check-in within 15 minutes of start time';
@@ -469,7 +469,7 @@ export const bookingService = {
           autoCancelled = true;
         }
       }
- 
+
       // Compute seconds until deadline
       var secondsUntilDeadline = -1;
       if (b.status === 'APPROVED' && !b.checkedIn && b.date && b.startTime) {
@@ -481,7 +481,7 @@ export const bookingService = {
           secondsUntilDeadline = Math.max(0, deadlineSecs - nowSecs);
         }
       }
- 
+
       return {
         bookingId:            id,
         status:               b.status,
@@ -492,7 +492,7 @@ export const bookingService = {
       };
     }
   },
- 
+
   // Backward-compatible helper for older pages
   updateStatus: async (id, status) => {
     if (status === 'APPROVED') return bookingService.approve(id, 'Approved by admin');
@@ -501,7 +501,7 @@ export const bookingService = {
     throw new Error('Unsupported status transition: ' + status);
   },
 };
- 
+
 // ── Ticket Service ───────────────────────────────────
 export const ticketService = {
   getAll: async () => {
@@ -523,7 +523,15 @@ export const ticketService = {
   create: async (data) => {
     try { return (await api.post('/api/tickets', data)).data; }
     catch {
-      const nt = { ...data, id: 't' + Date.now(), status: 'OPEN', assignedTo: null, assignedToName: null, createdAt: new Date().toISOString(), slaDeadline: new Date(Date.now() + 48 * 3600000).toISOString() };
+      const nt = {
+        ...data,
+        id: 't' + Date.now(),
+        status: 'OPEN',
+        assignedTo: null,
+        assignedToName: null,
+        createdAt: new Date().toISOString(),
+        slaDeadline: new Date(Date.now() + 48 * 3600000).toISOString()
+      };
       mockTickets.push(nt);
       return nt;
     }
@@ -534,22 +542,31 @@ export const ticketService = {
   },
   assign: async (id, techId, techName) => {
     try { return (await api.patch(`/api/tickets/${id}/assign`, { techId })).data; }
-    catch { const t = mockTickets.find(t => t.id === id); if (t) { t.assignedTo = techId; t.assignedToName = techName; t.status = 'IN_PROGRESS'; } return t; }
+    catch {
+      const t = mockTickets.find(t => t.id === id);
+      if (t) { t.assignedTo = techId; t.assignedToName = techName; t.status = 'IN_PROGRESS'; }
+      return t;
+    }
   },
 };
- 
+
 // ── Notification Service ────────────────────────────
 export const notificationService = {
   getByRole: async (role) => {
-    try { return (await api.get('/api/notifications', { params: { role } })).data; }
-    catch { return mockNotifications.filter(n => n.role === role); }
+    try {
+      const data = (await api.get('/api/notifications', { params: { role } })).data;
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.warn('Could not load notifications:', error?.message || error);
+      return mockNotifications.filter(n => n.role === role);
+    }
   },
   markAsRead: async (id) => {
     try { await api.patch(`/api/notifications/${id}/read`); }
     catch { const n = mockNotifications.find(n => n.id === id); if (n) n.read = true; }
   },
 };
- 
+
 // ── User Service ─────────────────────────────────────
 export const userService = {
   getAll: async () => {
@@ -559,5 +576,17 @@ export const userService = {
   getTechnicians: async () => {
     try { return (await api.get('/api/users/technicians')).data; }
     catch { return [...mockTechnicians]; }
+  },
+  getAssignableStaff: async () => {
+    try {
+      const users = (await api.get('/api/users')).data;
+      return (Array.isArray(users) ? users : []).filter((u) => {
+        const role = String(u?.role || '').toUpperCase();
+        return (role === 'TECHNICIAN' || role === 'ADMIN') && u?.active !== false;
+      });
+    } catch {
+      return [...mockTechnicians, ...mockUsers.filter(u => String(u?.role || '').toUpperCase() === 'ADMIN')]
+        .filter(u => u?.active !== false);
+    }
   },
 };

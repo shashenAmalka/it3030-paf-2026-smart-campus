@@ -1,16 +1,16 @@
 :root {
-  --nav-guest-bg: var(--color-navy, #1B2A4A);
+  --nav-guest-bg: #1B2A4A;
   --nav-guest-text: #FFFFFF;
-  --nav-guest-active: var(--color-yellow, #F5A623);
-  --nav-guest-btn-bg: var(--color-yellow, #F5A623);
+  --nav-guest-active: #F5A623;
+  --nav-guest-btn-bg: #F5A623;
   --nav-guest-btn-text: #1B2A4A;
 
-  --nav-auth-bg: var(--color-navy, #1B2A4A);
-  --nav-auth-text: rgba(255, 255, 255, 0.75);
-  --nav-auth-active-bg: transparent;
-  --nav-auth-active-text: #FFFFFF;
+  --nav-auth-bg: #1B2A4A;
+  --nav-auth-text: rgba(255, 255, 255, 0.85);
+  --nav-auth-active-bg: rgba(245, 166, 35, 0.15);
+  --nav-auth-active-text: #F5A623;
   --nav-auth-icon-bg: rgba(255, 255, 255, 0.08);
-  --nav-auth-badge: var(--color-danger, #EF4444);
+  --nav-auth-badge: #EF4444;
 }
 
 .guest-nav,
@@ -19,7 +19,6 @@
   top: 0;
   z-index: 120;
   animation: navFadeIn 0.2s ease;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .guest-nav {
@@ -29,7 +28,7 @@
 }
 
 .guest-nav.is-scrolled {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
 }
 
 .guest-nav__inner,
@@ -76,7 +75,7 @@
 }
 
 .guest-nav__brand-text {
-  color: #ffffff;
+  color: #FFFFFF;
   font-weight: 600;
   font-size: 16px;
   font-family: 'Montserrat', sans-serif;
@@ -135,8 +134,8 @@
 }
 
 .guest-nav__btn--outline {
-  background-color: #F5A623;
-  color: #ffffff;
+  background: transparent;
+  color: #FFFFFF;
   border: 1px solid rgba(255, 255, 255, 0.7);
 }
 
@@ -192,17 +191,33 @@
 }
 
 .auth-nav {
-  background: var(--nav-auth-bg);
-  min-height: 64px;
-  transition: box-shadow 0.2s ease;
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 1200px;
+  background: rgba(27, 42, 74, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  min-height: 60px;
 }
 
 .auth-nav.is-scrolled {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
 }
 
 .auth-nav__inner {
-  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  min-height: 60px;
 }
 
 .auth-nav__brand {
@@ -215,11 +230,12 @@
   font-weight: 700;
   font-size: 16px;
   cursor: pointer;
+  padding: 0;
 }
 
 .auth-nav__brand img {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
 }
 
@@ -231,30 +247,25 @@
   justify-content: center;
 }
 
-.auth-nav__tab,
-.auth-nav .nav-link {
+.auth-nav__tab {
   text-decoration: none;
   color: var(--nav-auth-text);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
-  padding: 4px 0;
-  margin: 0 14px;
-  border-radius: 0;
-  border-bottom: 2px solid transparent;
-  transition: background 0.18s ease, color 0.18s ease;
+  padding: 8px 16px;
+  border-radius: 999px;
+  transition: background 0.2s, color 0.2s;
+  border-bottom: none;
 }
 
-.auth-nav__tab:hover,
-.auth-nav .nav-link:hover {
-  background: transparent;
+.auth-nav__tab:hover {
+  background: rgba(255, 255, 255, 0.1);
   color: #FFFFFF;
 }
 
-.auth-nav__tab.is-active,
-.auth-nav .nav-link.active {
-  background: var(--nav-auth-active-bg);
-  color: var(--nav-auth-active-text);
-  border-bottom-color: var(--color-yellow, #F5A623);
+.auth-nav__tab.is-active {
+  background: rgba(245, 166, 35, 0.2);
+  color: #F5A623;
 }
 
 .auth-nav__right {
@@ -276,6 +287,35 @@
   color: #FFFFFF;
   position: relative;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background-color 0.18s ease, transform 0.18s ease;
+}
+
+.auth-notification__trigger:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.auth-notification__trigger:active {
+  transform: translateY(1px);
+}
+
+.auth-notification__trigger:focus-visible {
+  outline: 2px solid #F5A623;
+  outline-offset: 2px;
+}
+
+.auth-notification__trigger svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.auth-notification__icon {
+  font-weight: 700;
+  font-size: 13px;
 }
 
 .auth-notification__badge {
@@ -291,7 +331,7 @@
   line-height: 17px;
   font-weight: 700;
   padding: 0 4px;
-  border: 2px solid var(--nav-auth-bg);
+  border: 2px solid #1B2A4A;
 }
 
 .auth-notification__panel {
@@ -546,7 +586,6 @@
 }
 
 @media (max-width: 1024px) {
-
   .guest-nav__links,
   .guest-nav__actions,
   .auth-nav__links,
@@ -562,7 +601,7 @@
 
   .guest-nav__inner,
   .auth-nav__inner {
-    min-height: 56px;
+    min-height: 60px;
   }
 }
 
@@ -573,7 +612,7 @@
     right: 0;
     bottom: 0;
     z-index: 125;
-    background: #1a1a2e;
+    background: #1B2A4A;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -625,7 +664,6 @@
   from {
     opacity: 0;
   }
-
   to {
     opacity: 1;
   }
