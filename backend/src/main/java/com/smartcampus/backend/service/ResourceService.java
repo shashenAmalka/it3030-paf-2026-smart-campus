@@ -77,14 +77,7 @@ public class ResourceService {
 
     public Resource create(ResourceRequest request) {
         validateAvailabilityWindow(request);
-
-        String hallId = buildHallId(
-            request.getBuildingName(),
-            request.getBlock(),
-            request.getFloor(),
-            request.getHallNumber()
-        );
-        ensureHallIdUniqueForCreate(hallId);
+        validateCoordinates(request);
 
         Resource resource = new Resource();
         applyRequest(resource, request);
@@ -98,14 +91,7 @@ public class ResourceService {
 
     public Resource update(String id, ResourceRequest request) {
         validateAvailabilityWindow(request);
-
-        String hallId = buildHallId(
-            request.getBuildingName(),
-            request.getBlock(),
-            request.getFloor(),
-            request.getHallNumber()
-        );
-        ensureHallIdUniqueForUpdate(hallId, id);
+        validateCoordinates(request);
 
         Resource existing = getByIdOrThrow(id);
         applyRequest(existing, request);
@@ -157,7 +143,7 @@ public class ResourceService {
         resource.setType(request.getType());
         resource.setCapacity(request.getCapacity());
         resource.setLocation(request.getLocation().trim());
-        resource.setDescription(request.getDescription() == null ? "" : request.getDescription().trim());
+        resource.setDescription(request.getDescription().trim());
         resource.setAvailableFrom(request.getAvailableFrom().trim());
         resource.setAvailableTo(request.getAvailableTo().trim());
 
@@ -166,6 +152,8 @@ public class ResourceService {
         resource.setFloor(request.getFloor());
         resource.setHallNumber(request.getHallNumber());
         resource.setHallId(hallId);
+        resource.setLatitude(request.getLatitude());
+        resource.setLongitude(request.getLongitude());
         resource.setFacilities(normalizeFacilities(request.getFacilities()));
 
         resource.setStatus(request.getStatus());
@@ -220,6 +208,18 @@ public class ResourceService {
         }
     }
 
+    private void validateCoordinates(ResourceRequest request) {
+        boolean hasLatitude = request.getLatitude() != null;
+        boolean hasLongitude = request.getLongitude() != null;
+
+        if (hasLatitude != hasLongitude) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Both latitude and longitude are required when setting map location"
+            );
+        }
+    }
+
     private String normalize(String value) {
         if (value == null) {
             return null;
@@ -236,17 +236,5 @@ public class ResourceService {
             return false;
         }
         return source.toLowerCase(Locale.ROOT).contains(target.toLowerCase(Locale.ROOT));
-    }
-
-    private void ensureHallIdUniqueForCreate(String hallId) {
-        if (resourceRepository.existsByHallId(hallId)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Resource with the same hall ID already exists");
-        }
-    }
-
-    private void ensureHallIdUniqueForUpdate(String hallId, String id) {
-        if (resourceRepository.existsByHallIdAndIdNot(hallId, id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Resource with the same hall ID already exists");
-        }
     }
 }
