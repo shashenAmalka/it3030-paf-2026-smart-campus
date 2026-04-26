@@ -569,8 +569,8 @@ function CheckinStatusView({ todayApproved, checkedInCount, today, onCheckin }) 
                   </span>
                 )}
 
-                {!b.checkedIn && isWindow && (
-                  <AdminCheckinControl booking={b} onCheckin={onCheckin} />
+                {!b.checkedIn && !isExpired && (
+                  <AdminCheckinControl booking={b} onCheckin={onCheckin} isWindow={isWindow} />
                 )}
 
                 {b.adminNotes && (
@@ -587,7 +587,7 @@ function CheckinStatusView({ todayApproved, checkedInCount, today, onCheckin }) 
   );
 }
 
-function AdminCheckinControl({ booking, onCheckin }) {
+function AdminCheckinControl({ booking, onCheckin, isWindow }) {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -625,7 +625,7 @@ function AdminCheckinControl({ booking, onCheckin }) {
           value={code}
           onChange={e => setCode(e.target.value)}
           onKeyDown={e => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && isWindow) {
               e.preventDefault();
               submitCheckin();
             }
@@ -634,11 +634,16 @@ function AdminCheckinControl({ booking, onCheckin }) {
         <button
           className="btn-sm btn-sm--success"
           onClick={submitCheckin}
-          disabled={loading}
+          disabled={loading || !isWindow}
         >
-          {loading ? 'Checking…' : 'Check in'}
+          {loading ? 'Checking…' : isWindow ? 'Check in' : 'Not started'}
         </button>
       </div>
+      {!isWindow && (
+        <div style={{ marginTop: 4, fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+          Check-in opens 15 minutes before the booking start time.
+        </div>
+      )}
       {error && (
         <div style={{ marginTop: 4, fontSize: '0.7rem', color: '#F87171', textAlign: 'right' }}>
           {error}
