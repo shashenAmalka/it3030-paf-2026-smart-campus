@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { formatResourceType, getResourceVisual } from "./resourceVisuals";
+import ResourceLocationMap from "./ResourceLocationMap";
 
 function formatFacility(value) {
   return String(value || "").split("_").join(" ");
@@ -7,10 +9,19 @@ function formatFacility(value) {
 export default function ResourceDetailsModal({ resource, onClose }) {
   if (!resource) return null;
 
+  var stateShowLiveLocation = useState(false);
+  var showLiveLocation = stateShowLiveLocation[0];
+  var setShowLiveLocation = stateShowLiveLocation[1];
+
   var visual = getResourceVisual(resource.type);
   var active = resource.status === "ACTIVE";
   var hoursText = (resource.availableFrom || "--:--") + " - " + (resource.availableTo || "--:--");
   var facilities = Array.isArray(resource.facilities) ? resource.facilities : [];
+  var hasMapLocation = resource.latitude != null && resource.longitude != null;
+
+  var directionsUrl = hasMapLocation
+    ? "https://www.google.com/maps/dir/?api=1&destination=" + resource.latitude + "," + resource.longitude + "&travelmode=walking"
+    : "";
 
   return (
     <div className="rm-modal-overlay" onClick={onClose}>
@@ -64,6 +75,46 @@ export default function ResourceDetailsModal({ resource, onClose }) {
                 );
               })}
             </div>
+          </div>
+
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: 6 }}>
+              Location Map
+            </div>
+
+            {hasMapLocation ? (
+              <>
+                <ResourceLocationMap
+                  latitude={resource.latitude}
+                  longitude={resource.longitude}
+                  interactive={false}
+                  showUserLocation={showLiveLocation}
+                  height={260}
+                />
+
+                <div className="rm-location-coordinates">
+                  Resource Coordinates: {resource.latitude}, {resource.longitude}
+                </div>
+
+                <div className="rm-form-actions" style={{ marginTop: 10 }}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ width: "auto" }}
+                    onClick={function () { setShowLiveLocation(!showLiveLocation); }}
+                  >
+                    {showLiveLocation ? "Hide My Live Location" : "Show My Live Location"}
+                  </button>
+                  <a className="btn-primary" style={{ width: "auto" }} href={directionsUrl} target="_blank" rel="noreferrer">
+                    Open Directions
+                  </a>
+                </div>
+              </>
+            ) : (
+              <div style={{ color: "var(--text-muted)", fontSize: "0.84rem" }}>
+                No map location has been set for this resource yet.
+              </div>
+            )}
           </div>
 
           <button className="btn-secondary" style={{ marginTop: 14 }} onClick={onClose}>Close</button>
