@@ -7,24 +7,29 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/auth/admin")
-@CrossOrigin
+@RequestMapping("/api/admin/security")
+@CrossOrigin(origins = "http://localhost:5173")
 public class LoginAuditController {
 
     @Autowired
-    private LoginAuditService loginAuditService;
+    private LoginAuditService auditService;
 
-    @GetMapping("/login-audit")
+    // GET /api/admin/security/login-activity
+    // Get recent login activity — Admin only
+    @GetMapping("/login-activity")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<LoginAuditLog>> getLoginAudit() {
-        return ResponseEntity.ok(loginAuditService.getRecentLogs());
+    public ResponseEntity<List<LoginAuditLog>> getLoginActivity() {
+        return ResponseEntity.ok(auditService.getRecentLogs());
     }
 
-    @GetMapping("/login-audit/all")
+    // GET /api/admin/security/stats
+    // Get today's login stats — Admin only
+    @GetMapping("/stats")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<LoginAuditLog>> getAllLoginAudit() {
-        return ResponseEntity.ok(loginAuditService.getAllLogs());
+    public ResponseEntity<Map<String, Long>> getStats() {
+        return ResponseEntity.ok(auditService.getTodayStats());
     }
 }

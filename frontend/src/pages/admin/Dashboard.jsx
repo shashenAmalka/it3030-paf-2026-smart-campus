@@ -5,6 +5,7 @@ import { ticketService } from '../../services/ticketService';
 import { userService } from '../../services/api';
 import StatCard from '../../components/StatCard';
 import { useAuth } from '../../context/AuthContext';
+import LoginActivityDashboard from '../../components/admin/LoginActivityDashboard';
 
 /**
  * Admin Dashboard — analytics overview with mock charts.
@@ -113,6 +114,11 @@ export default function AdminDashboard() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Security & Login Activity */}
+      <div style={{ marginTop: 24 }}>
+        <LoginActivityDashboard />
       </div>
     </div>
   );

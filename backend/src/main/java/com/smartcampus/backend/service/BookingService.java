@@ -98,6 +98,8 @@ public class BookingService {
                 .expectedAttendees(request.getAttendees())
                 .status(BookingStatus.PENDING)
                 .bookingType(bookingType)
+                .checkedIn(false)
+                .checkedInAt(null)
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
@@ -205,6 +207,18 @@ public class BookingService {
         return toResponse(bookingRepository.save(booking));
     }
 
+    public void delete(User actor, String id) {
+        Booking booking = getByIdOrThrow(id);
+        ensureOwnerOrAdmin(actor, booking);
+
+        if (booking.getStatus() == BookingStatus.APPROVED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Approved bookings must be cancelled before deletion");
+        }
+
+        bookingRepository.deleteById(id);
+    }
+
     public List<BookingResponse> getFacilityConflicts(String facilityId, LocalDate date) {
         if (facilityId == null || facilityId.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Facility ID is required");
@@ -224,6 +238,8 @@ public class BookingService {
                 .map(this::toResponse)
                 .toList();
     }
+
+    // ── Private helpers ──────────────────────────────────────────
 
     private void validateCapacity(int attendees, Resource facility) {
         if (facility.getCapacity() != null && attendees > facility.getCapacity()) {
@@ -313,6 +329,8 @@ public class BookingService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+    // ── toResponse overloads ─────────────────────────────────────
+
     private BookingResponse toResponse(
             Booking booking,
             Map<String, Resource> facilityMap,
@@ -339,6 +357,8 @@ public class BookingService {
                 .bookingType(booking.getBookingType())
                 .adminNotes(booking.getAdminNotes())
                 .qrCode(booking.getQrCode())
+                .checkedIn(booking.getCheckedIn() != null ? booking.getCheckedIn() : false)
+                .checkedInAt(booking.getCheckedInAt())
                 .createdAt(booking.getCreatedAt())
                 .updatedAt(booking.getUpdatedAt())
                 .build();
@@ -368,6 +388,8 @@ public class BookingService {
                 .bookingType(booking.getBookingType())
                 .adminNotes(booking.getAdminNotes())
                 .qrCode(booking.getQrCode())
+                .checkedIn(booking.getCheckedIn() != null ? booking.getCheckedIn() : false)
+                .checkedInAt(booking.getCheckedInAt())
                 .createdAt(booking.getCreatedAt())
                 .updatedAt(booking.getUpdatedAt())
                 .build();

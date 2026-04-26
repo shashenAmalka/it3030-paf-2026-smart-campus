@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,7 +39,7 @@ public class BookingController {
     private final CurrentUserService currentUserService;
 
     /*
-     Get all bookings Admins see all bookings, users see only their own
+     Get all bookings — Admins see all bookings, users see only their own
      */
     @GetMapping
     public List<BookingResponse> getAll(
@@ -79,7 +80,7 @@ public class BookingController {
     }
 
     /*
-     Update an existing PENDING booking, owner and admin can
+     Update an existing PENDING booking — owner and admin can
      */
     @PutMapping("/{id}")
     public BookingResponse update(
@@ -93,7 +94,7 @@ public class BookingController {
     }
 
     /*
-     Approve a PENDING booking admin-only
+     Approve a PENDING booking — admin only
      */
     @PatchMapping("/{id}/approve")
     public BookingResponse approve(
@@ -107,8 +108,8 @@ public class BookingController {
         return bookingService.approve(actor, id, adminNotes);
     }
 
-    /**
-     * Reject a PENDING booking admin-only
+    /*
+     Reject a PENDING booking — admin only
      */
     @PatchMapping("/{id}/reject")
     public BookingResponse reject(
@@ -121,8 +122,8 @@ public class BookingController {
         return bookingService.reject(actor, id, body.getAdminNotes());
     }
 
-    /**
-     Cancel an APPROVED booking owner only
+    /*
+     Cancel an APPROVED booking — owner only (admin can also cancel)
      */
     @PatchMapping("/{id}/cancel")
     public BookingResponse cancel(
@@ -134,6 +135,23 @@ public class BookingController {
         return bookingService.cancel(actor, id);
     }
 
+    /*
+     Delete a booking — owner/admin can remove non-approved bookings
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @PathVariable String id,
+            @AuthenticationPrincipal OAuth2User principal,
+            HttpServletRequest request) {
+
+        User actor = currentUserService.resolveCurrentUser(principal, request);
+        bookingService.delete(actor, id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /*
+     Get facility conflicts for a given date (used by availability checker)
+     */
     @GetMapping("/facility/{facilityId}/conflicts")
     public List<BookingResponse> getFacilityConflicts(
             @PathVariable String facilityId,
