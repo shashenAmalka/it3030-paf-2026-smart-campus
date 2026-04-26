@@ -4,42 +4,71 @@ import com.smartcampus.backend.model.LoginAuditLog;
 import com.smartcampus.backend.repository.LoginAuditRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class LoginAuditService {
 
     @Autowired
-    private LoginAuditRepository loginAuditRepository;
+    private LoginAuditRepository repo;
 
-    public void logSuccess(String email, String role, String method) {
+    // Log successful login
+    public void logSuccess(String userId, String fullName,
+                            String email, String role,
+                            String method, String ip) {
         LoginAuditLog log = new LoginAuditLog();
+        log.setUserId(userId);
+        log.setFullName(fullName);
         log.setEmail(email);
         log.setRole(role);
-        log.setMethod(method);
+        log.setLoginMethod(method);
         log.setStatus("SUCCESS");
-        log.setReason(null);
-        loginAuditRepository.save(log);
+        log.setIpAddress(ip);
+        log.setTimestamp(Instant.now());
+        repo.save(log);
     }
 
-    public void logFailed(String email, String method, String reason) {
+    // Log failed login
+    public void logFailed(String email, String reason, String ip) {
         LoginAuditLog log = new LoginAuditLog();
         log.setEmail(email);
-        log.setRole("UNKNOWN");
-        log.setMethod(method);
         log.setStatus("FAILED");
-        log.setReason(reason);
-        loginAuditRepository.save(log);
+        log.setFailureReason(reason);
+        log.setIpAddress(ip);
+        log.setTimestamp(Instant.now());
+        repo.save(log);
     }
 
+    // Get recent logs
     public List<LoginAuditLog> getRecentLogs() {
-        LocalDateTime last24Hours = LocalDateTime.now().minusHours(24);
-        return loginAuditRepository
-            .findByCreatedAtAfterOrderByCreatedAtDesc(last24Hours);
+        return repo.findTop20ByOrderByTimestampDesc();
     }
 
-    public List<LoginAuditLog> getAllLogs() {
-        return loginAuditRepository.findAllByOrderByCreatedAtDesc();
+    // Get today's stats
+    public Map<String, Long> getTodayStats() {
+        java.time.Instant startOfDay = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.DAYS);
+        List<LoginAuditLog> todayLogs = repo.findAll().stream()
+                .filter(log -> log.getTimestamp().isAfter(startOfDay))
+                .toList();
+
+        long total = todayLogs.size();
+        long failed = todayLogs.stream().filter(l -> "FAILED".equals(l.getStatus())).count();
+        long unique = todayLogs.stream()
+                .filter(l -> "SUCCESS".equals(l.getStatus()))
+                .map(l -> l.getUserId())
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .count();
+
+        Map<String, Long> stats = new HashMap<>();
+        stats.put("totalLogins", total);
+        stats.put("failedAttempts", failed);
+        stats.put("successLogins", total - failed);
+        stats.put("uniqueUsers", unique);
+        return stats;
     }
 }

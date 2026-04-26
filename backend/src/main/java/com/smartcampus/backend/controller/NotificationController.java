@@ -24,6 +24,8 @@ public class NotificationController {
 
     private final TicketNotificationService ticketNotificationService;
     private final CurrentUserService currentUserService;
+    private final com.smartcampus.backend.service.TicketService ticketService;
+    private final com.smartcampus.backend.repository.TicketNotificationRepository notificationRepository;
 
     @GetMapping
     public ResponseEntity<?> getNotifications(
@@ -140,6 +142,63 @@ public class NotificationController {
         payload.put("relatedTicketId", notification.getRelatedTicketId() == null ? "" : notification.getRelatedTicketId());
         payload.put("createdAt", notification.getCreatedAt() == null ? "" : notification.getCreatedAt());
         payload.put("read", notification.isRead());
+        payload.put("hasAction", notification.isHasAction());
+        payload.put("actionType", notification.getActionType());
+        payload.put("actionCompleted", notification.isActionCompleted());
         return payload;
+    }
+
+    // POST /api/notifications/{id}/action
+    // Execute inline action from notification panel
+    @PostMapping("/{id}/action")
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, String>> executeAction(
+            @PathVariable String id,
+            @RequestBody Map<String, String> requestBody,
+            @AuthenticationPrincipal OAuth2User principal,
+            HttpServletRequest request) {
+
+        try {
+            User currentUser = currentUserService.resolveCurrentUser(principal, request);
+            String userId = currentUser.getId();
+
+            String action = requestBody.get("action");
+            String reason = requestBody.get("reason");
+
+            // Find the notification
+            TicketNotification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Notification not found"));
+
+            if (!notification.getRecipientId().equals(userId)) {
+                return ResponseEntity.status(403)
+                    .body(Map.of("message", "Not your notification"));
+            }
+
+            // Execute the action based on type
+            String relatedTicketId = notification.getRelatedTicketId();
+
+            if ("CONFIRM_RESOLUTION".equals(action)) {
+                // Call ticket service to confirm resolution
+                ticketService.confirmResolution(relatedTicketId, currentUser);
+                notification.setActionCompleted(true);
+                notificationRepository.save(notification);
+                return ResponseEntity.ok(Map.of("message", "Resolution confirmed"));
+            }
+
+            if ("DISPUTE_RESOLUTION".equals(action)) {
+                // Call ticket service to dispute resolution
+                com.smartcampus.backend.dto.DisputeRequest disputeReq = new com.smartcampus.backend.dto.DisputeRequest();
+                disputeReq.setDisputeNote(reason);
+                ticketService.disputeResolution(relatedTicketId, currentUser, disputeReq);
+                notification.setActionCompleted(true);
+                notificationRepository.save(notification);
+                return ResponseEntity.ok(Map.of("message", "Dispute submitted"));
+            }
+
+            return ResponseEntity.badRequest()
+                .body(Map.of("message", "Unknown action"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 }
