@@ -92,7 +92,7 @@ public class ResourceController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
         }
 
-        Optional<User> user = userRepository.findByEmail(email);
+        Optional<User> user = userRepository.findByEmailIgnoreCase(email);
         if (user.isEmpty() || user.get().getRole() != Role.ADMIN) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
         }
