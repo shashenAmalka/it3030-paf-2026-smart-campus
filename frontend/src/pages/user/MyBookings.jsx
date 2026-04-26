@@ -167,7 +167,17 @@ export default function MyBookings() {
     <div className="page-content animate-in">
 
       {/* ── Header ────────────────────────────────────────────── */}
-      <div className="content-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+      <div
+        className="content-header"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: 12,
+          marginTop: step === 'list' ? 40 : 0,
+        }}
+      >
         <div>
           <h1>My Bookings</h1>
           <p>Manage your facility and resource booking requests.</p>
