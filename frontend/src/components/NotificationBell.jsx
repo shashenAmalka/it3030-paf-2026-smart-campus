@@ -54,6 +54,12 @@ export default function NotificationBell({ role }) {
     return () => window.clearInterval(timerId);
   }, [load]);
 
+  useEffect(() => {
+    if (open) {
+      load();
+    }
+  }, [open, load]);
+
   /* ── Close on outside click ─────────────────────────────────── */
   useEffect(() => {
     if (!open) return;

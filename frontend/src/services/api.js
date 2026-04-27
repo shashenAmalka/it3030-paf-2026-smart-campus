@@ -4,6 +4,7 @@ import { mockResources } from '../mock/resources';
 import { mockTickets } from '../mock/tickets';
 import { mockUsers, mockTechnicians } from '../mock/users';
 import { mockNotifications } from '../mock/notifications';
+import { notificationService as inAppNotificationService } from './notificationService';
 
 const MOCK_BOOKINGS_STORAGE_KEY = 'smartcampus_mock_bookings';
 
@@ -69,6 +70,48 @@ function getStoredUser() {
   } catch {
     return null;
   }
+}
+
+function getMockUserById(userId) {
+  if (!userId) return null;
+  return [...mockUsers, ...mockTechnicians].find(function (user) {
+    return user && user.id === userId;
+  }) || null;
+}
+
+function getMockUserRole(userId) {
+  const user = getMockUserById(userId);
+  return user && user.role ? String(user.role).toUpperCase() : null;
+}
+
+function describeBooking(booking) {
+  if (!booking) return 'the booking';
+
+  var label = booking.facilityName || booking.resourceName || booking.facilityId || booking.resourceId || 'the booking';
+  var date = booking.date ? ` on ${booking.date}` : '';
+  var time = booking.startTime && booking.endTime ? ` (${booking.startTime} - ${booking.endTime})` : '';
+
+  return `${label}${date}${time}`;
+}
+
+function pushBookingMockNotification(role, title, message) {
+  if (!role) return;
+  inAppNotificationService.pushMock({
+    type: 'BOOKING',
+    role: String(role).toUpperCase(),
+    title,
+    message,
+  });
+}
+
+function pushBookingMockNotifications(roles, title, message) {
+  const uniqueRoles = [...new Set((Array.isArray(roles) ? roles : [roles])
+    .filter(Boolean)
+    .map(function (role) { return String(role).toUpperCase(); }))];
+
+  uniqueRoles.forEach(function (role) {
+    pushBookingMockNotification(role, title, message);
+  });
 }
 
 function shouldHydrateBookingName(booking) {
@@ -273,6 +316,7 @@ export const bookingService = {
       };
       mockBookings.push(nb);
       persistMockBookings();
+      pushBookingMockNotifications(['ADMIN'], 'New booking request', `${currentUser.name || 'A user'} requested ${describeBooking(nb)}.`);
       return hydrateSingleBookingWithResourceName(nb);
     }
   },
@@ -327,6 +371,7 @@ export const bookingService = {
       b.qrCode = b.qrCode || ('QR-' + id.substring(0, 8).toUpperCase() + '-' + new Date().getFullYear());
       b.updatedAt = new Date().toISOString();
       persistMockBookings();
+      pushBookingMockNotifications([getMockUserRole(b.userId) || 'USER'], 'Booking approved', `Your booking for ${describeBooking(b)} has been approved.`);
       return hydrateSingleBookingWithResourceName(b);
     }
   },
@@ -344,6 +389,7 @@ export const bookingService = {
       b.adminNotes = String(reason).trim();
       b.updatedAt = new Date().toISOString();
       persistMockBookings();
+      pushBookingMockNotifications([getMockUserRole(b.userId) || 'USER'], 'Booking rejected', `Your booking for ${describeBooking(b)} was rejected${b.adminNotes ? `: ${b.adminNotes}` : '.'}`);
       return hydrateSingleBookingWithResourceName(b);
     }
   },
@@ -432,6 +478,15 @@ export const bookingService = {
       b.updatedAt = now;
       persistMockBookings();
 
+      var actor = getStoredUser() || {};
+      var ownerRole = getMockUserRole(b.userId) || 'USER';
+      var actorRole = String(actor.role || '').toUpperCase();
+      if (actorRole === 'ADMIN') {
+        pushBookingMockNotifications([ownerRole, 'ADMIN'], 'Booking checked in', `${describeBooking(b)} was checked in successfully.`);
+      } else {
+        pushBookingMockNotifications(['ADMIN'], 'Booking checked in', `${describeBooking(b)} was checked in successfully.`);
+      }
+
       return {
         message: 'Check-in successful! Enjoy your booking.',
         bookingId: id,
@@ -466,6 +521,8 @@ export const bookingService = {
           b.adminNotes = 'Auto-cancelled: no check-in within 15 minutes of start time';
           b.updatedAt = new Date().toISOString();
           persistMockBookings();
+          var ownerRole = getMockUserRole(b.userId) || 'USER';
+          pushBookingMockNotifications([ownerRole, 'ADMIN'], 'Booking auto-cancelled', `${describeBooking(b)} was auto-cancelled because no check-in was recorded within 15 minutes of the start time.`);
           autoCancelled = true;
         }
       }

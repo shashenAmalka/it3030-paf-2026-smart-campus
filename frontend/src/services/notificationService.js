@@ -89,10 +89,11 @@ export const notificationService = {
    */
   pushMock(notification) {
     _mockStore.unshift({
-      id: 'n' + Date.now(),
+      ...notification,
+      id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       read: false,
       createdAt: new Date().toISOString(),
-      ...notification,
+      role: notification.role ? String(notification.role).toUpperCase() : notification.role,
     });
   },
 };

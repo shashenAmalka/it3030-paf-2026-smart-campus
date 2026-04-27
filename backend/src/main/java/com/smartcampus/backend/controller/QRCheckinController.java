@@ -5,6 +5,7 @@ import com.smartcampus.backend.model.BookingStatus;
 import com.smartcampus.backend.model.Role;
 import com.smartcampus.backend.model.User;
 import com.smartcampus.backend.repository.BookingRepository;
+import com.smartcampus.backend.service.BookingNotificationService;
 import com.smartcampus.backend.service.CurrentUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,7 @@ public class QRCheckinController {
 
     private final BookingRepository bookingRepository;
     private final CurrentUserService currentUserService;
+    private final BookingNotificationService bookingNotificationService;
 
     // ── POST /api/bookings/{id}/checkin ──────────────────────────
 
@@ -102,6 +104,7 @@ public class QRCheckinController {
             booking.setAdminNotes("Auto-cancelled: check-in window expired (15 minutes after start time)");
             booking.setUpdatedAt(Instant.now());
             bookingRepository.save(booking);
+            bookingNotificationService.notifyAutoCancelled(booking);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Check-in window has expired. The booking has been auto-cancelled.");
         }
@@ -111,6 +114,7 @@ public class QRCheckinController {
         booking.setCheckedInAt(Instant.now());
         booking.setUpdatedAt(Instant.now());
         bookingRepository.save(booking);
+        bookingNotificationService.notifyCheckIn(booking, actor);
 
         return ResponseEntity.ok(Map.of(
                 "message",     "Check-in successful! Enjoy your booking.",
@@ -232,5 +236,6 @@ public class QRCheckinController {
                 "Auto-cancelled: no check-in within 15 minutes of start time (" + booking.getStartTime() + ")");
         booking.setUpdatedAt(Instant.now());
         bookingRepository.save(booking);
+        bookingNotificationService.notifyAutoCancelled(booking);
     }
 }
