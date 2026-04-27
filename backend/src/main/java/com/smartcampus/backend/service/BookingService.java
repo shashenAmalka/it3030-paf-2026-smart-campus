@@ -37,6 +37,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final ResourceRepository resourceRepository;
     private final UserRepository userRepository;
+    private final BookingNotificationService bookingNotificationService;
 
     public List<BookingResponse> getBookings(User actor, BookingStatus status) {
         List<Booking> bookings;
@@ -104,7 +105,9 @@ public class BookingService {
                 .updatedAt(now)
                 .build();
 
-        return toResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        bookingNotificationService.notifyCreated(saved, actor);
+        return toResponse(saved);
     }
 
     public BookingResponse update(User actor, String id, BookingRequest request) {
@@ -167,7 +170,9 @@ public class BookingService {
         booking.setQrCode("QR-" + id.substring(0, 8).toUpperCase() + "-" + LocalDate.now().getYear());
         booking.setUpdatedAt(Instant.now());
 
-        return toResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        bookingNotificationService.notifyDecision(saved, true, adminNotes);
+        return toResponse(saved);
     }
 
     public BookingResponse reject(User actor, String id, String reason) {
@@ -184,7 +189,9 @@ public class BookingService {
         booking.setAdminNotes(note);
         booking.setUpdatedAt(Instant.now());
 
-        return toResponse(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        bookingNotificationService.notifyDecision(saved, false, note);
+        return toResponse(saved);
     }
 
     public BookingResponse cancel(User actor, String id) {

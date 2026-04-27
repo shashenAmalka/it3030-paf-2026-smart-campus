@@ -49,6 +49,12 @@ export default function NotificationBadge({ role = 'USER' }) {
   }, [loadNotifications]);
 
   useEffect(() => {
+    if (open) {
+      loadNotifications();
+    }
+  }, [open, loadNotifications]);
+
+  useEffect(() => {
     if (!open) return;
 
     const handleOutside = (event) => {
