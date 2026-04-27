@@ -28,6 +28,8 @@ import ManageResources            from './pages/admin/ManageResources';
 import ManageBookings             from './pages/admin/ManageBookings';
 import ManageTickets              from './pages/admin/ManageTickets';
 import AdminTicketDetail         from './pages/admin/AdminTicketDetail';
+import SecurityAudit            from './pages/admin/SecurityAudit';
+import AdminNotifications      from './pages/admin/AdminNotifications';
 
 // TECHNICIAN pages
 import TechDashboard              from './pages/technician/Dashboard';
@@ -85,7 +87,9 @@ export default function App() {
             <Route path="/admin/bookings"      element={<ManageBookings />} />
             <Route path="/admin/tickets"       element={<ManageTickets />} />
             <Route path="/admin/tickets/:id"  element={<AdminTicketDetail />} />
+            <Route path="/admin/security"     element={<SecurityAudit />} />
             <Route path="/admin/profile"       element={<Profile />} />
+            <Route path="/admin/notifications" element={<AdminNotifications />} />
           </Route>
 
           {/* ── TECHNICIAN — Sidebar Dashboard ── */}

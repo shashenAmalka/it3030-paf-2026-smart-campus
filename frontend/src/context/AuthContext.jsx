@@ -99,6 +99,13 @@ export function AuthProvider({ children }) {
       return;
     }
 
+    // If no token exists, don't try to fetch user details to avoid 401 noise.
+    if (!token && authMode !== 'local') {
+      setLoading(false);
+      setUser(null);
+      return;
+    }
+
     try {
       const { data } = await api.get('/api/user/me');
       setUser(data);

@@ -12,7 +12,13 @@ export default function OAuthCallback() {
   const [params]      = useSearchParams();
 
   useEffect(() => {
-    const role = params.get('role');
+    const token = params.get('token');
+    const role  = params.get('role');
+
+    if (token) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('smartcampus_auth_mode', 'backend');
+    }
 
     fetchUser().then(() => {
       const routes = {

@@ -41,6 +41,14 @@ function isToday(str) {
   return str === toDateStr(new Date());
 }
 
+function parseTimeToMinutes(timeValue) {
+  if (!timeValue || typeof timeValue !== 'string') return 0;
+  const parts = timeValue.split(':');
+  const hours = Number(parts[0] || 0);
+  const minutes = Number(parts[1] || 0);
+  return (hours * 60) + minutes;
+}
+
 // ─────────────────────────────────────────────────────────────────
 export default function ManageBookings() {
   const [bookings,    setBookings]    = useState([]);
@@ -106,9 +114,11 @@ export default function ManageBookings() {
 
   const handleCheckin = async (id, qrCode) => {
     const data = await bookingService.checkin(id, qrCode);
+    const targetId = data?.bookingId ?? data?.id ?? id;
+    const checkedInAt = data?.checkedInAt || new Date().toISOString();
     setBookings(prev => prev.map(b => (
-      b.id === data.bookingId
-        ? { ...b, checkedIn: true, checkedInAt: data.checkedInAt }
+      String(b.id) === String(targetId)
+        ? { ...b, checkedIn: true, checkedInAt }
         : b
     )));
     notify('Check-in successful!');
@@ -145,14 +155,12 @@ export default function ManageBookings() {
   const todayApproved = useMemo(() =>
     bookings.filter(b => b.status === 'APPROVED' && b.date === today)
       .sort((a, b) => {
-        const toMins = t => t ? t.split(':').map(Number).reduce((h, m) => h * 60 + m) : 0;
-        return toMins(a.startTime) - toMins(b.startTime);
+        return parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime);
       }),
   [bookings, today]);
 
-  const statsBase = useMemo(() =>
-    useDateStrip ? bookings.filter(b => b.date === selectedDate) : bookings,
-  [bookings, selectedDate, useDateStrip]);
+  // Stats should always show global counts so admins don't miss pending items on other dates
+  const statsBase = bookings;
 
   const counts = useMemo(() =>
     statsBase.reduce((acc, b) => {
@@ -245,7 +253,15 @@ export default function ManageBookings() {
                 ? `1px solid ${s.color}`
                 : '1px solid rgba(255,255,255,0.08)',
             }}
-            onClick={() => setFilter(s.label === 'Total' ? 'ALL' : s.label.toUpperCase())}
+            onClick={() => {
+              setFilter(s.label === 'Total' ? 'ALL' : s.label.toUpperCase());
+              // If they click 'Pending', automatically switch to range view to show all pending items
+              if (s.label === 'Pending') {
+                setUseDateStrip(false);
+                setDateFrom('');
+                setDateTo('');
+              }
+            }}
           >
             <span style={{ fontSize: '1.1rem', fontWeight: 700, color: s.color }}>{s.value}</span>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>{s.label}</span>
@@ -494,7 +510,7 @@ function CheckinStatusView({ todayApproved, checkedInCount, today, onCheckin }) 
       {/* Booking rows */}
       {todayApproved.map(b => {
         const nowMins   = new Date().getHours() * 60 + new Date().getMinutes();
-        const startMins = b.startTime ? b.startTime.split(':').map(Number).reduce((h, m) => h * 60 + m) : 0;
+        const startMins = parseTimeToMinutes(b.startTime);
         const deadMins  = startMins + 15;
         const openMins  = startMins - 15;
         const isWindow  = nowMins >= openMins && nowMins <= deadMins;
@@ -569,8 +585,8 @@ function CheckinStatusView({ todayApproved, checkedInCount, today, onCheckin }) 
                   </span>
                 )}
 
-                {!b.checkedIn && isWindow && (
-                  <AdminCheckinControl booking={b} onCheckin={onCheckin} />
+                {!b.checkedIn && !isExpired && (
+                  <AdminCheckinControl booking={b} onCheckin={onCheckin} isWindow={isWindow} />
                 )}
 
                 {b.adminNotes && (
@@ -587,7 +603,7 @@ function CheckinStatusView({ todayApproved, checkedInCount, today, onCheckin }) 
   );
 }
 
-function AdminCheckinControl({ booking, onCheckin }) {
+function AdminCheckinControl({ booking, onCheckin, isWindow }) {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -625,7 +641,7 @@ function AdminCheckinControl({ booking, onCheckin }) {
           value={code}
           onChange={e => setCode(e.target.value)}
           onKeyDown={e => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && isWindow) {
               e.preventDefault();
               submitCheckin();
             }
@@ -634,11 +650,16 @@ function AdminCheckinControl({ booking, onCheckin }) {
         <button
           className="btn-sm btn-sm--success"
           onClick={submitCheckin}
-          disabled={loading}
+          disabled={loading || !isWindow}
         >
-          {loading ? 'Checking…' : 'Check in'}
+          {loading ? 'Checking…' : isWindow ? 'Check in' : 'Not started'}
         </button>
       </div>
+      {!isWindow && (
+        <div style={{ marginTop: 4, fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+          Check-in opens 15 minutes before the booking start time.
+        </div>
+      )}
       {error && (
         <div style={{ marginTop: 4, fontSize: '0.7rem', color: '#F87171', textAlign: 'right' }}>
           {error}

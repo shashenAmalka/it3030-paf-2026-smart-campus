@@ -50,8 +50,10 @@ public class NotificationPreferenceService {
             case "TICKET_CREATED",
                  "TICKET_ASSIGNED",
                  "TICKET_RESOLVED",
-                 "TICKET_CLOSED"     -> pref.isTicketUpdates();
-            case "NEW_COMMENT"       -> pref.isCommentAlerts();
+                 "TICKET_CLOSED",
+                 "STATUS_UPDATED"    -> pref.isTicketUpdates();
+            case "NEW_COMMENT",
+                 "COMMENT_ADDED"     -> pref.isCommentAlerts();
             case "SLA_BREACHED",
                  "SLA_AT_RISK"       -> pref.isSlaWarnings();
             default                  -> pref.isSystemAlerts();

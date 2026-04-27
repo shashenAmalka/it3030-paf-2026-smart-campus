@@ -12,8 +12,9 @@ import { notificationService } from '../services/notificationService';
 import InlineActionButtons from './notifications/InlineActionButtons';
 
 const TYPE_AVATAR = {
-  BOOKING: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'BK' },
-  TICKET: { bg: 'bg-amber-500/20', text: 'text-amber-500', label: 'TK' },
+  BOOKING_CREATED: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'BK' },
+  BOOKING_APPROVED: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', label: 'BK' },
+  BOOKING_REJECTED: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'BK' },
   TICKET_CREATED: { bg: 'bg-amber-500/20', text: 'text-amber-500', label: 'TK' },
   TICKET_ASSIGNED: { bg: 'bg-amber-500/20', text: 'text-amber-500', label: 'TK' },
   STATUS_UPDATED: { bg: 'bg-amber-500/20', text: 'text-amber-500', label: 'TK' },
@@ -23,8 +24,14 @@ const TYPE_AVATAR = {
   SYSTEM: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', label: 'SYS' },
 };
 
-function ticketPathByRole(role, ticketId) {
+function resolvePath(role, notification) {
+  if (notification.relatedBookingId) {
+    return role === 'ADMIN' ? '/admin/bookings' : '/my-bookings';
+  }
+  
+  const ticketId = notification.relatedTicketId;
   if (!ticketId) return null;
+  
   if (role === 'ADMIN') return `/admin/tickets/${ticketId}?tab=chat`;
   if (role === 'TECHNICIAN') return `/technician/tickets/${ticketId}?tab=conversation`;
   return `/tickets/${ticketId}?tab=conversation`;
@@ -54,6 +61,12 @@ export default function NotificationBell({ role }) {
     return () => window.clearInterval(timerId);
   }, [load]);
 
+  useEffect(() => {
+    if (open) {
+      load();
+    }
+  }, [open, load]);
+
   /* ── Close on outside click ─────────────────────────────────── */
   useEffect(() => {
     if (!open) return;
@@ -73,7 +86,7 @@ export default function NotificationBell({ role }) {
     await notificationService.markAsRead(notification.id);
     setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
 
-    const path = ticketPathByRole(role, notification.relatedTicketId);
+    const path = resolvePath(role, notification);
     if (path) {
       setOpen(false);
       navigate(path);

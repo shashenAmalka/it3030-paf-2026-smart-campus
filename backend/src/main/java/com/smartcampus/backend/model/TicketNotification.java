@@ -24,6 +24,7 @@ public class TicketNotification {
     private String title;
     private String message;
     private String relatedTicketId;
+    private String relatedBookingId;
 
     @Builder.Default
     private boolean isRead = false;
