@@ -186,7 +186,7 @@ export default function MyBookings() {
         {step === 'list' && (
           <button
             className="btn-primary"
-            style={{ width: 'auto' }}
+            style={{ width: 'auto', marginTop: 25 }}
             onClick={() => {
               setSelectedResource(null);
               setEditingBooking(null);
