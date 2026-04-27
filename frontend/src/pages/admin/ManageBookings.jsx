@@ -159,9 +159,8 @@ export default function ManageBookings() {
       }),
   [bookings, today]);
 
-  const statsBase = useMemo(() =>
-    useDateStrip ? bookings.filter(b => b.date === selectedDate) : bookings,
-  [bookings, selectedDate, useDateStrip]);
+  // Stats should always show global counts so admins don't miss pending items on other dates
+  const statsBase = bookings;
 
   const counts = useMemo(() =>
     statsBase.reduce((acc, b) => {
@@ -254,7 +253,15 @@ export default function ManageBookings() {
                 ? `1px solid ${s.color}`
                 : '1px solid rgba(255,255,255,0.08)',
             }}
-            onClick={() => setFilter(s.label === 'Total' ? 'ALL' : s.label.toUpperCase())}
+            onClick={() => {
+              setFilter(s.label === 'Total' ? 'ALL' : s.label.toUpperCase());
+              // If they click 'Pending', automatically switch to range view to show all pending items
+              if (s.label === 'Pending') {
+                setUseDateStrip(false);
+                setDateFrom('');
+                setDateTo('');
+              }
+            }}
           >
             <span style={{ fontSize: '1.1rem', fontWeight: 700, color: s.color }}>{s.value}</span>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>{s.label}</span>

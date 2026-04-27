@@ -140,6 +140,7 @@ public class NotificationController {
         payload.put("title", notification.getTitle() == null ? "Notification" : notification.getTitle());
         payload.put("message", notification.getMessage() == null ? "" : notification.getMessage());
         payload.put("relatedTicketId", notification.getRelatedTicketId() == null ? "" : notification.getRelatedTicketId());
+        payload.put("relatedBookingId", notification.getRelatedBookingId() == null ? "" : notification.getRelatedBookingId());
         payload.put("createdAt", notification.getCreatedAt() == null ? "" : notification.getCreatedAt());
         payload.put("read", notification.isRead());
         payload.put("hasAction", notification.isHasAction());
