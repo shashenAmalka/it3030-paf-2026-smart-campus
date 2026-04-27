@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: '/admin/resources',     icon: '🏛️', label: 'Resources'     },
   { to: '/admin/bookings',      icon: '📅', label: 'Bookings'      },
   { to: '/admin/tickets',       icon: '🎫', label: 'Tickets'       },
+  { to: '/admin/security',      icon: '🛡️', label: 'Security'      },
   { to: '/admin/profile',       icon: '👤', label: 'Profile'       },
 ];
 

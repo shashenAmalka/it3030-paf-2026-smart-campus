@@ -25,6 +25,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final UserRepository userRepository;
     private final LoginAuditService loginAuditService;
+    private final JwtService jwtService;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
@@ -48,11 +49,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
             // For GitHub, fall back to 'login' attribute as the lookup key only if email is still null
             if (email == null && "GITHUB".equals(provider)) {
-                // This case should not normally occur since CustomOAuth2UserService already
-                // fetched the private email and saved the user. Try finding by login.
                 String login = oAuth2User.getAttribute("login");
                 if (login != null) {
-                    // Search by name as last resort (user was saved with their GitHub username as name)
                     Optional<User> byLogin = userRepository.findAll().stream()
                         .filter(u -> login.equalsIgnoreCase(u.getName()))
                         .findFirst();
@@ -70,20 +68,18 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
             final String normalizedEmail = email.trim().toLowerCase();
             Optional<User> userOptional = userRepository.findByEmailIgnoreCase(normalizedEmail);
-            String targetUrl;
+            
+            // Generate JWT Token
+            String token = jwtService.generateToken(normalizedEmail);
+            String role = "USER";
 
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
-                loginAuditService.logSuccess(user.getId(), user.getName(), user.getEmail(), user.getRole().name(), provider, request.getRemoteAddr());
-                targetUrl = switch (user.getRole()) {
-                    case ADMIN      -> frontendUrl + "/oauth-callback?role=ADMIN";
-                    case TECHNICIAN -> frontendUrl + "/oauth-callback?role=TECHNICIAN";
-                    default         -> frontendUrl + "/oauth-callback?role=USER";
-                };
-            } else {
-                targetUrl = frontendUrl + "/oauth-callback?role=USER";
+                role = user.getRole().name();
+                loginAuditService.logSuccess(user.getId(), user.getName(), user.getEmail(), role, provider, request.getRemoteAddr());
             }
 
+            String targetUrl = frontendUrl + "/oauth-callback?token=" + token + "&role=" + role;
             getRedirectStrategy().sendRedirect(request, response, targetUrl);
 
         } catch (Exception ex) {

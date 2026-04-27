@@ -30,23 +30,26 @@ public class UserController {
      */
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(
-            @AuthenticationPrincipal OAuth2User principal,
+            @AuthenticationPrincipal Object principal,
             HttpServletRequest request) {
 
-        // Try OAuth2 first
-        if (principal != null) {
-            String email = principal.getAttribute("email");
-            Optional<User> userOptional = userRepository.findByEmailIgnoreCase(email);
+        // 1. Try JWT (String email) or OAuth2User
+        String email = null;
 
-            if (userOptional.isEmpty()) {
-                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
-            }
-
-            User user = userOptional.get();
-            return ResponseEntity.ok(buildUserResponse(user));
+        if (principal instanceof OAuth2User oauth2User) {
+            email = oauth2User.getAttribute("email");
+        } else if (principal instanceof String stringEmail) {
+            email = stringEmail;
         }
 
-        // Fallback: manual login session
+        if (email != null) {
+            Optional<User> userOptional = userRepository.findByEmailIgnoreCase(email);
+            if (userOptional.isPresent()) {
+                return ResponseEntity.ok(buildUserResponse(userOptional.get()));
+            }
+        }
+
+        // 2. Fallback: manual login session (legacy support if needed)
         HttpSession session = request.getSession(false);
         if (session != null) {
             String userId = (String) session.getAttribute("manualUserId");
