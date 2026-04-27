@@ -41,6 +41,14 @@ function isToday(str) {
   return str === toDateStr(new Date());
 }
 
+function parseTimeToMinutes(timeValue) {
+  if (!timeValue || typeof timeValue !== 'string') return 0;
+  const parts = timeValue.split(':');
+  const hours = Number(parts[0] || 0);
+  const minutes = Number(parts[1] || 0);
+  return (hours * 60) + minutes;
+}
+
 // ─────────────────────────────────────────────────────────────────
 export default function ManageBookings() {
   const [bookings,    setBookings]    = useState([]);
@@ -106,9 +114,11 @@ export default function ManageBookings() {
 
   const handleCheckin = async (id, qrCode) => {
     const data = await bookingService.checkin(id, qrCode);
+    const targetId = data?.bookingId ?? data?.id ?? id;
+    const checkedInAt = data?.checkedInAt || new Date().toISOString();
     setBookings(prev => prev.map(b => (
-      b.id === data.bookingId
-        ? { ...b, checkedIn: true, checkedInAt: data.checkedInAt }
+      String(b.id) === String(targetId)
+        ? { ...b, checkedIn: true, checkedInAt }
         : b
     )));
     notify('Check-in successful!');
@@ -145,8 +155,7 @@ export default function ManageBookings() {
   const todayApproved = useMemo(() =>
     bookings.filter(b => b.status === 'APPROVED' && b.date === today)
       .sort((a, b) => {
-        const toMins = t => t ? t.split(':').map(Number).reduce((h, m) => h * 60 + m) : 0;
-        return toMins(a.startTime) - toMins(b.startTime);
+        return parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime);
       }),
   [bookings, today]);
 
@@ -494,7 +503,7 @@ function CheckinStatusView({ todayApproved, checkedInCount, today, onCheckin }) 
       {/* Booking rows */}
       {todayApproved.map(b => {
         const nowMins   = new Date().getHours() * 60 + new Date().getMinutes();
-        const startMins = b.startTime ? b.startTime.split(':').map(Number).reduce((h, m) => h * 60 + m) : 0;
+        const startMins = parseTimeToMinutes(b.startTime);
         const deadMins  = startMins + 15;
         const openMins  = startMins - 15;
         const isWindow  = nowMins >= openMins && nowMins <= deadMins;
