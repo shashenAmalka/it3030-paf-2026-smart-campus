@@ -14,22 +14,39 @@ import java.util.List;
 public class TicketNotificationService {
 
     private final TicketNotificationRepository notificationRepository;
+    private final NotificationPreferenceService preferenceService;
 
     /**
      * Create and store a notification.
+     * Respects user notification preferences.
      */
     public void notify(String recipientId, String type, String title,
-                       String message, String relatedTicketId) {
+                       String message, String relatedId, boolean isBooking) {
+        
+        // 1. Check user preference before creating
+        if (!preferenceService.isEnabled(recipientId, type)) {
+            return;
+        }
+
         TicketNotification notification = TicketNotification.builder()
                 .recipientId(recipientId)
                 .type(type)
                 .title(title)
                 .message(message)
-                .relatedTicketId(relatedTicketId)
+                .relatedTicketId(isBooking ? null : relatedId)
+                .relatedBookingId(isBooking ? relatedId : null)
                 .isRead(false)
                 .createdAt(Instant.now())
                 .build();
         notificationRepository.save(notification);
+    }
+
+    /**
+     * Helper for backward compatibility with Ticket calls.
+     */
+    public void notify(String recipientId, String type, String title,
+                       String message, String relatedTicketId) {
+        notify(recipientId, type, title, message, relatedTicketId, false);
     }
 
     /**

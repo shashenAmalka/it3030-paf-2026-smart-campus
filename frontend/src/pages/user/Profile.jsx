@@ -112,17 +112,21 @@ export default function Profile() {
                 </div>
                 
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">{user?.name || 'Student Name'}</h2>
+                  <h2 className="text-2xl font-bold text-slate-900">{user?.name || 'User Name'}</h2>
                   <p className="text-slate-500 text-sm mt-1">{user?.email || 'email@example.com'}</p>
                   <div className="flex gap-2 mt-3">
-                    <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-full">Student</span>
+                    <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-full">
+                      {userRole.charAt(0) + userRole.slice(1).toLowerCase()}
+                    </span>
                     <span className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-full">{loginMethod}</span>
                   </div>
                 </div>
               </div>
               
               <div className="hidden sm:block">
-                <span className="px-4 py-1.5 border border-indigo-200 text-indigo-600 bg-white text-xs font-bold rounded-full shadow-sm">STUDENT ACCOUNT</span>
+                <span className="px-4 py-1.5 border border-indigo-200 text-indigo-600 bg-white text-xs font-bold rounded-full shadow-sm">
+                  {userRole.toUpperCase()} ACCOUNT
+                </span>
               </div>
             </div>
 
