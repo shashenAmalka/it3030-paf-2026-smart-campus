@@ -3,6 +3,7 @@ package com.smartcampus.backend.scheduler;
 import com.smartcampus.backend.model.Booking;
 import com.smartcampus.backend.model.BookingStatus;
 import com.smartcampus.backend.repository.BookingRepository;
+import com.smartcampus.backend.service.BookingNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -34,6 +35,7 @@ import java.util.List;
 public class BookingScheduler {
 
     private final BookingRepository bookingRepository;
+    private final BookingNotificationService bookingNotificationService;
 
     /**
      * Runs every 60 seconds.
@@ -79,6 +81,7 @@ public class BookingScheduler {
                                 + booking.getStartTime() + ")");
                 booking.setUpdatedAt(Instant.now());
                 bookingRepository.save(booking);
+                bookingNotificationService.notifyAutoCancelled(booking);
                 cancelledCount++;
                 log.info("Auto-cancelled booking {} (facility: {}, date: {}, startTime: {})",
                         booking.getId(), booking.getFacilityId(),

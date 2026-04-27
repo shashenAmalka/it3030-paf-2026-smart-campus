@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationBell from '../components/NotificationBell';
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard',     icon: '📊', label: 'Dashboard'     },
@@ -36,12 +37,12 @@ export default function AdminLayout() {
         <div style={{ flex: 1 }} />
 
         {/* Notification Bell in sidebar footer */}
-        {/* <div style={{ padding: '12px 0', borderBottom: '1px solid var(--border)', marginBottom: 12 }}>
+        <div style={{ padding: '12px 0', borderBottom: '1px solid var(--border)', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
             <NotificationBell role="ADMIN" />
             <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Notifications</span>
           </div>
-        </div> */}
+        </div>
 
         {/* User info */}
         {user && (
